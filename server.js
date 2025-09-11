@@ -34,7 +34,10 @@ app.set('trust proxy', true);
 
 // const cors = require('cors');
 
-app.use(cors());
+app.use(cors({
+  origin: true,           // Reflect request origin (allows all)
+  credentials: true       // Allow cookies/auth headers
+}));
 
 //==========================Request Console=======================//
 

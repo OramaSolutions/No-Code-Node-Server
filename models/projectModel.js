@@ -30,12 +30,7 @@ const project = new mongoose.Schema({
     required: true,
     maxlength: 255
   },
-  // Reference to hyperTuneParams (one-to-one)
-  // hyperTuneParams: {
-  //   type: mongoose.Schema.Types.ObjectId,
-  //   ref: 'hyperTuneParams',
-  //   unique: true
-  // },
+  model: { type: String },
   versionNumber: {
     type: String,
     required: true,

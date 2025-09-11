@@ -72,6 +72,7 @@ const updateApplicationSchema = Joi.object({
 
 // Controller for sync status endpoint
 exports.syncStatus = async (req, res) => {
+    // console.log("Request Body for sync status:", req.body);
     const session = await mongoose.startSession();
 
     try {
@@ -89,7 +90,9 @@ exports.syncStatus = async (req, res) => {
         const userId = req.user_id;
         const userExists = await User.findById(userId);
         if (!userExists) {
+            console.log('user not found')
             return res.status(RESPONSE_STATUS.NOT_FOUND).json(
+                
                 createErrorResponse('User not found', 'USER_NOT_FOUND')
             );
         }
@@ -103,6 +106,7 @@ exports.syncStatus = async (req, res) => {
 
         if (!project) {
             await session.abortTransaction();
+             console.log('project not found')
             return res.status(RESPONSE_STATUS.NOT_FOUND).json(
                 createErrorResponse('Project not found for syncing. Sync aborted.', 'PROJECT_NOT_FOUND')
             );

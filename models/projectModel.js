@@ -31,11 +31,11 @@ const project = new mongoose.Schema({
     maxlength: 255
   },
   // Reference to hyperTuneParams (one-to-one)
-  hyperTuneParams: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'hyperTuneParams',
-    unique: true
-  },
+  // hyperTuneParams: {
+  //   type: mongoose.Schema.Types.ObjectId,
+  //   ref: 'hyperTuneParams',
+  //   unique: true
+  // },
   versionNumber: {
     type: String,
     required: true,

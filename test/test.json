@@ -1,0 +1,311 @@
+{
+    "name": "test",
+    "created_by": "orama",
+    "created_at": "2025-06-30 13:13:24.640242",
+    "updated_at": "2025-06-30T07:43:24.627Z",
+    "images": [
+        {
+            "id": 0,
+            "path": "images/Image__2025-03-29__15-46-39.png",
+            "filename": "Image__2025-03-29__15-46-39.png",
+            "assignedTo": null
+        },
+        {
+            "id": 1,
+            "path": "images/Image__2025-03-29__15-46-37.png",
+            "filename": "Image__2025-03-29__15-46-37.png",
+            "assignedTo": null
+        },
+        {
+            "id": 2,
+            "path": "images/Image__2025-03-29__15-47-58.png",
+            "filename": "Image__2025-03-29__15-47-58.png",
+            "assignedTo": null
+        },
+        {
+            "id": 3,
+            "path": "images/Image__2025-03-29__15-47-56.png",
+            "filename": "Image__2025-03-29__15-47-56.png",
+            "assignedTo": null
+        },
+        {
+            "id": 4,
+            "path": "images/Image__2025-03-29__15-47-52.png",
+            "filename": "Image__2025-03-29__15-47-52.png",
+            "assignedTo": null
+        },
+        {
+            "id": 5,
+            "path": "images/Image__2025-03-29__15-47-50.png",
+            "filename": "Image__2025-03-29__15-47-50.png",
+            "assignedTo": null
+        },
+        {
+            "id": 6,
+            "path": "images/Image__2025-03-29__15-47-46.png",
+            "filename": "Image__2025-03-29__15-47-46.png",
+            "assignedTo": null
+        },
+        {
+            "id": 7,
+            "path": "images/Image__2025-03-29__15-47-34.png",
+            "filename": "Image__2025-03-29__15-47-34.png",
+            "assignedTo": null
+        },
+        {
+            "id": 8,
+            "path": "images/Image__2025-03-29__15-47-28.png",
+            "filename": "Image__2025-03-29__15-47-28.png",
+            "assignedTo": null
+        },
+        {
+            "id": 9,
+            "path": "images/Image__2025-03-29__15-46-41.png",
+            "filename": "Image__2025-03-29__15-46-41.png",
+            "assignedTo": null
+        },
+        {
+            "id": 10,
+            "path": "images/Image__2025-03-29__15-48-17.png",
+            "filename": "Image__2025-03-29__15-48-17.png",
+            "assignedTo": null
+        },
+        {
+            "id": 11,
+            "path": "images/Image__2025-03-29__15-48-13.png",
+            "filename": "Image__2025-03-29__15-48-13.png",
+            "assignedTo": null
+        },
+        {
+            "id": 12,
+            "path": "images/Image__2025-03-29__15-48-06.png",
+            "filename": "Image__2025-03-29__15-48-06.png",
+            "assignedTo": null
+        },
+        {
+            "id": 13,
+            "path": "images/Image__2025-03-29__15-48-04.png",
+            "filename": "Image__2025-03-29__15-48-04.png",
+            "assignedTo": null
+        },
+        {
+            "id": 14,
+            "path": "images/Image__2025-03-29__15-48-02.png",
+            "filename": "Image__2025-03-29__15-48-02.png",
+            "assignedTo": null
+        },
+        {
+            "id": 15,
+            "path": "images/Image__2025-03-29__15-48-23.png",
+            "filename": "Image__2025-03-29__15-48-23.png",
+            "assignedTo": null
+        },
+        {
+            "id": 16,
+            "path": "images/Image__2025-03-29__15-48-21.png",
+            "filename": "Image__2025-03-29__15-48-21.png",
+            "assignedTo": null
+        },
+        {
+            "id": 17,
+            "path": "images/Image__2025-03-29__15-48-19.png",
+            "filename": "Image__2025-03-29__15-48-19.png",
+            "assignedTo": null
+        },
+        {
+            "id": 18,
+            "path": "images/Image__2025-03-29__15-48-57.png",
+            "filename": "Image__2025-03-29__15-48-57.png",
+            "assignedTo": null
+        },
+        {
+            "id": 19,
+            "path": "images/Image__2025-03-29__15-48-42.png",
+            "filename": "Image__2025-03-29__15-48-42.png",
+            "assignedTo": null
+        },
+        {
+            "id": 20,
+            "path": "images/Image__2025-03-29__15-48-38.png",
+            "filename": "Image__2025-03-29__15-48-38.png",
+            "assignedTo": null
+        },
+        {
+            "id": 21,
+            "path": "images/Image__2025-03-29__15-48-33.png",
+            "filename": "Image__2025-03-29__15-48-33.png",
+            "assignedTo": null
+        },
+        {
+            "id": 22,
+            "path": "images/Image__2025-03-29__15-48-31.png",
+            "filename": "Image__2025-03-29__15-48-31.png",
+            "assignedTo": null
+        },
+        {
+            "id": 23,
+            "path": "images/Image__2025-03-29__15-48-29.png",
+            "filename": "Image__2025-03-29__15-48-29.png",
+            "assignedTo": null
+        },
+        {
+            "id": 24,
+            "path": "images/Image__2025-03-29__15-48-27.png",
+            "filename": "Image__2025-03-29__15-48-27.png",
+            "assignedTo": null
+        },
+        {
+            "id": 25,
+            "path": "images/Image__2025-03-29__15-48-25.png",
+            "filename": "Image__2025-03-29__15-48-25.png",
+            "assignedTo": null
+        },
+        {
+            "id": 26,
+            "path": "images/Image__2025-03-29__15-49-13.png",
+            "filename": "Image__2025-03-29__15-49-13.png",
+            "assignedTo": null
+        },
+        {
+            "id": 27,
+            "path": "images/Image__2025-03-29__15-49-11.png",
+            "filename": "Image__2025-03-29__15-49-11.png",
+            "assignedTo": null
+        },
+        {
+            "id": 28,
+            "path": "images/Image__2025-03-29__15-49-09.png",
+            "filename": "Image__2025-03-29__15-49-09.png",
+            "assignedTo": null
+        },
+        {
+            "id": 29,
+            "path": "images/Image__2025-03-29__15-49-07.png",
+            "filename": "Image__2025-03-29__15-49-07.png",
+            "assignedTo": null
+        },
+        {
+            "id": 30,
+            "path": "images/Image__2025-03-29__15-49-05.png",
+            "filename": "Image__2025-03-29__15-49-05.png",
+            "assignedTo": null
+        },
+        {
+            "id": 31,
+            "path": "images/Image__2025-03-29__15-49-03.png",
+            "filename": "Image__2025-03-29__15-49-03.png",
+            "assignedTo": null
+        },
+        {
+            "id": 32,
+            "path": "images/Image__2025-03-29__15-49-01.png",
+            "filename": "Image__2025-03-29__15-49-01.png",
+            "assignedTo": null
+        },
+        {
+            "id": 33,
+            "path": "images/Image__2025-03-29__15-48-59.png",
+            "filename": "Image__2025-03-29__15-48-59.png",
+            "assignedTo": null
+        },
+        {
+            "id": 34,
+            "path": "images/Image__2025-03-29__15-49-34.png",
+            "filename": "Image__2025-03-29__15-49-34.png",
+            "assignedTo": null
+        },
+        {
+            "id": 35,
+            "path": "images/Image__2025-03-29__15-49-32.png",
+            "filename": "Image__2025-03-29__15-49-32.png",
+            "assignedTo": null
+        },
+        {
+            "id": 36,
+            "path": "images/Image__2025-03-29__15-49-29.png",
+            "filename": "Image__2025-03-29__15-49-29.png",
+            "assignedTo": null
+        },
+        {
+            "id": 37,
+            "path": "images/Image__2025-03-29__15-49-23.png",
+            "filename": "Image__2025-03-29__15-49-23.png",
+            "assignedTo": null
+        },
+        {
+            "id": 38,
+            "path": "images/Image__2025-03-29__15-49-21.png",
+            "filename": "Image__2025-03-29__15-49-21.png",
+            "assignedTo": null
+        },
+        {
+            "id": 39,
+            "path": "images/Image__2025-03-29__15-49-19.png",
+            "filename": "Image__2025-03-29__15-49-19.png",
+            "assignedTo": null
+        },
+        {
+            "id": 40,
+            "path": "images/Image__2025-03-29__15-49-17.png",
+            "filename": "Image__2025-03-29__15-49-17.png",
+            "assignedTo": null
+        },
+        {
+            "id": 41,
+            "path": "images/Image__2025-03-29__15-49-15.png",
+            "filename": "Image__2025-03-29__15-49-15.png",
+            "assignedTo": null
+        },
+        {
+            "id": 42,
+            "path": "images/Image__2025-03-29__15-49-56.png",
+            "filename": "Image__2025-03-29__15-49-56.png",
+            "assignedTo": null
+        },
+        {
+            "id": 43,
+            "path": "images/Image__2025-03-29__15-49-54.png",
+            "filename": "Image__2025-03-29__15-49-54.png",
+            "assignedTo": null
+        },
+        {
+            "id": 44,
+            "path": "images/Image__2025-03-29__15-49-50.png",
+            "filename": "Image__2025-03-29__15-49-50.png",
+            "assignedTo": null
+        },
+        {
+            "id": 45,
+            "path": "images/Image__2025-03-29__15-49-47.png",
+            "filename": "Image__2025-03-29__15-49-47.png",
+            "assignedTo": null
+        },
+        {
+            "id": 46,
+            "path": "images/Image__2025-03-29__15-49-45.png",
+            "filename": "Image__2025-03-29__15-49-45.png",
+            "assignedTo": null
+        },
+        {
+            "id": 47,
+            "path": "images/Image__2025-03-29__15-49-40.png",
+            "filename": "Image__2025-03-29__15-49-40.png",
+            "assignedTo": null
+        },
+        {
+            "id": 48,
+            "path": "images/Image__2025-03-29__15-49-35.png",
+            "filename": "Image__2025-03-29__15-49-35.png",
+            "assignedTo": null
+        },
+        {
+            "id": 49,
+            "path": "images/Image__2025-03-29__15-47-32.png",
+            "filename": "Image__2025-03-29__15-47-32.png",
+            "assignedTo": null
+        }
+    ],
+    "assigned_users": [],
+    "assignedUsers": [],
+    "annotation_type": "ocr"
+}

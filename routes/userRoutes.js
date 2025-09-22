@@ -38,7 +38,7 @@ router.post("/getProjectForOpen", projectController.getProjectForOpen);
 router.get("/myLatestProjectList", projectController.myLatestProjectList);
 router.get("/myProjectList", projectController.myProjectList);
 router.get("/versionDropDown", projectController.versionDropDown);
-router.get("/notificationList", projectController.notificationList);
+// router.get("/notificationList", projectController.notificationList);
 router.post("/uploadDocumnet", upload.single("fileName"), userController.uploadDocumnet);
 
 module.exports = router;

@@ -82,7 +82,7 @@ const project = new mongoose.Schema({
   stepData: {
     current_step: {
       type: String,
-      enum: ['labelled', 'HyperTune', 'infer', 'remark', 'application'],
+      enum: ['labelled', 'augumented', 'images', 'dataSplit', 'HyperTune', 'infer', 'remark', 'application'],
       default: 'labelled'
     },
     overall_progress: {

@@ -11,14 +11,16 @@ const {
 
 const syncStatusSchema = Joi.object({
     username: Joi.string().min(1).max(50).required(),
+    projectId: Joi.string().hex().length(24).required(),
     name: Joi.string().min(1).max(255).required(),
     version: Joi.string().min(1).max(50).required(),
-    current_step: Joi.string().valid('labelled', 'HyperTune', 'infer', 'remark', 'application').required(),
+    // ['labelled', 'augumented', 'images', 'dataSplit', 'HyperTune', 'infer', 'remark', 'application']
+    current_step: Joi.string().valid('labelled', 'augumented', 'images', 'dataSplit', 'HyperTune', 'infer', 'remark', 'application').required(),
     overall_status: Joi.string().valid('in_progress', 'completed', 'failed', 'pending').required(),
     overall_progress: Joi.number().min(0).max(100).required(),
     step_status: Joi.object().required(),
     last_activity: Joi.string().isoDate().required(),
-    task: Joi.string().optional().default('defect-detection')
+    task: Joi.string().optional()
 });
 
 const projectQuerySchema = Joi.object({
@@ -48,8 +50,8 @@ const updateBuildStatusSchema = Joi.object({
     username: Joi.string().min(1).max(50).required(),
     name: Joi.string().min(1).max(255).required(),
     version: Joi.string().min(1).max(50).required(),
-    task: Joi.string().optional().default('defect-detection'),
-
+    task: Joi.string().optional(),
+    projectId: Joi.string().hex().length(24).required(),
     buildStarted: Joi.boolean().required(),
     buildStartTime: Joi.date().iso().allow(null).optional(),
     buildEndTime: Joi.date().iso().allow(null).optional(),
@@ -62,8 +64,8 @@ const updateApplicationSchema = Joi.object({
     userId: Joi.string().hex().length(24).required(),
     name: Joi.string().min(1).max(255).required(),
     version: Joi.string().min(1).max(50).required(),
-    task: Joi.string().optional().default('defect-detection'),
-
+    task: Joi.string().optional(),
+    projectId: Joi.string().hex().length(24).required(),
     appDownloaded: Joi.boolean().optional(),
     downloadedFromIp: Joi.string().optional().allow(null, ''),
     downloadTime: Joi.date().iso().optional(),
@@ -72,19 +74,20 @@ const updateApplicationSchema = Joi.object({
 
 // Controller for sync status endpoint
 exports.syncStatus = async (req, res) => {
-    // console.log("Request Body for sync status:", req.body);
+    console.log("Request Body for sync status:", req.body);
     const session = await mongoose.startSession();
 
     try {
         const { error, value } = syncStatusSchema.validate(req.body);
         if (error) {
+            console.log('validation error', error);
             return res.status(RESPONSE_STATUS.BAD_REQUEST).json(
                 createErrorResponse('Validation failed', 'VALIDATION_ERROR', error.details.map(d => d.message))
             );
         }
 
         const {
-            username, name, version, current_step, overall_status,
+            username, projectId, name, version, current_step, overall_status,
             overall_progress, step_status, last_activity, task
         } = value;
         const userId = req.user_id;
@@ -92,21 +95,26 @@ exports.syncStatus = async (req, res) => {
         if (!userExists) {
             console.log('user not found')
             return res.status(RESPONSE_STATUS.NOT_FOUND).json(
-                
+
                 createErrorResponse('User not found', 'USER_NOT_FOUND')
             );
         }
 
         session.startTransaction();
         const normalizedModel = normalizeModel(task);
+        let project = await Project.findById(projectId).session(session);
+        console.log('project by id', project)
+        if (!project) {
+            console.log('project by id not found, searching by details')
+            project = await Project.findOne({
+                userId, name, model: normalizedModel, versionNumber: version
+            }).session(session);
+        }
 
-        let project = await Project.findOne({
-            userId, name, model: normalizedModel, versionNumber: version
-        }).session(session);
 
         if (!project) {
             await session.abortTransaction();
-             console.log('project not found')
+            console.log('project not found')
             return res.status(RESPONSE_STATUS.NOT_FOUND).json(
                 createErrorResponse('Project not found for syncing. Sync aborted.', 'PROJECT_NOT_FOUND')
             );
@@ -302,16 +310,20 @@ exports.updateBuildStatus = async (req, res) => {
         }
 
         const {
-            username, name, version, task,
+            username, projectId, name, version, task,
             buildStarted, buildStartTime, buildEndTime, tokensConsumed, buildReady
         } = value;
 
-         const userId = req.user_id;
+        const userId = req.user_id;
         const normalizedModel = normalizeModel(task);
 
-        const project = await Project.findOne({
-            userId, name, model: normalizedModel, versionNumber: version
-        });
+        let project = await Project.findById(projectId);
+        if (!project) {
+            project = await Project.findOne({
+                userId, name, model: normalizedModel, versionNumber: version
+            });
+        }
+
 
         if (!project) {
             return res.status(RESPONSE_STATUS.NOT_FOUND).json(
@@ -353,17 +365,24 @@ exports.updateApplicationStatus = async (req, res) => {
         }
 
         const {
-            username, name, version, userId, task,
+            username, projectId, name, version, userId, task,
             appDownloaded, downloadedFromIp, downloadTime,
             app_id
         } = value;
 
-       
+
         const normalizedModel = normalizeModel(task);
 
-        const project = await Project.findOne({
-            userId, name, model: normalizedModel, versionNumber: version
-        });
+
+
+
+        let project = await Project.findById(projectId);
+        if (!project) {
+            project = await Project.findOne({
+                userId, name, model: normalizedModel, versionNumber: version
+            });
+        }
+
 
         if (!project) {
             return res.status(RESPONSE_STATUS.NOT_FOUND).json(
@@ -382,7 +401,7 @@ exports.updateApplicationStatus = async (req, res) => {
         res.status(RESPONSE_STATUS.SUCCESS).json(
             createSuccessResponse(project.applicationStatus, 'Application status updated successfully')
         );
-        
+
     } catch (error) {
         console.error('Error updating application status:', error);
         res.status(RESPONSE_STATUS.SERVER_ERROR).json(

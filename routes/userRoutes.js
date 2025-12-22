@@ -32,7 +32,11 @@ router.post("/userSignup", userController.userSignup);
 router.put("/setPassword", userController.setPassword);
 
 router.post("/userLogin", userController.userLogin);
-router.post('/refresh', csrfProtection, refresh);
+// add csrfProtection when we are on the same origin oramasolutions.in
+// router.post('/refresh', csrfProtection, refresh);
+router.post('/refresh',refresh);
+
+
 router.post("/sentEmail", userController.forgetEmail);
 router.put("/resetPasword", userController.resetPassword);
 

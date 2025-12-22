@@ -186,16 +186,16 @@ const userLogin = async (req, res) => {
 
         res.cookie("access_token", accessToken, {
             httpOnly: true,
-            sameSite: "None",
-            secure: true,
+            sameSite: "Lax",
+            secure: process.env.NODE_ENV === "production",
             maxAge: 15 * 60 * 1000, //15 mins
             path: "/",
         });
 
         res.cookie("refresh_token", refreshToken, {
             httpOnly: true,
-            sameSite: "None",
-            secure: true,
+            sameSite: "Lax",
+            secure: process.env.NODE_ENV === "production",
             maxAge: 30 * 24 * 60 * 60 * 1000, // 30days
             path: "/api/v1/user/refresh", // 🔒 VERY IMPORTANT
         });
@@ -203,8 +203,8 @@ const userLogin = async (req, res) => {
         // CSRF token (readable by JS)
         res.cookie("csrf_token", crypto.randomUUID(), {
             httpOnly: false,
-            sameSite: "None",
-            secure: true,
+            sameSite: "Lax",
+            secure: process.env.NODE_ENV === "production",
         });
 
         return res.status(RESPONSE_STATUS.SUCCESS).send({ code: RESPONSE_STATUS.SUCCESS, message: RESPONSE_MESSAGES.LOGIN_SUCCESS, activeUser });

@@ -11,6 +11,7 @@ const userCont = require("../controller/user/user");
 const multer = require("multer");
 const multerS3 = require('multer-s3');
 const aws = require("aws-sdk");
+
 aws.config.update({
     accessKeyId: process.env.ACCESS_KEY,
     secretAccessKey: process.env.SECRET_ACCESS_KEY
@@ -48,6 +49,7 @@ router.patch("/userStatusChanged", userController.statusChanged);
 router.get("/userList", userController.userList);
 router.get("/userProjectList", userController.projectList);
 router.get("/searchUserList", userController.searchUserList);
+router.get("/deleteUser", userController.deleteUser);
 
 //=======================Help============================
 router.post("/addAssignUser", helpController.addUser);

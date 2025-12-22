@@ -14,8 +14,8 @@ const syncStatusSchema = Joi.object({
     projectId: Joi.string().hex().length(24).required(),
     name: Joi.string().min(1).max(255).required(),
     version: Joi.string().min(1).max(50).required(),
-    // ['labelled', 'augumented', 'images', 'dataSplit', 'HyperTune', 'infer', 'remark', 'application']
-    current_step: Joi.string().valid('labelled', 'augumented', 'images', 'dataSplit', 'HyperTune', 'infer', 'remark', 'application').required(),
+    // ['labelled', 'augmented', 'images', 'dataSplit', 'HyperTune', 'infer', 'remark', 'application']
+    current_step: Joi.string().valid('labelled', 'augmented', 'images', 'dataSplit', 'HyperTune', 'infer', 'remark', 'application').required(),
     overall_status: Joi.string().valid('in_progress', 'completed', 'failed', 'pending').required(),
     overall_progress: Joi.number().min(0).max(100).required(),
     step_status: Joi.object().required(),
@@ -74,7 +74,7 @@ const updateApplicationSchema = Joi.object({
 
 // Controller for sync status endpoint
 exports.syncStatus = async (req, res) => {
-    console.log("Request Body for sync status:", req.body);
+    // console.log("Request Body for sync status:", req.body);
     const session = await mongoose.startSession();
 
     try {
@@ -90,20 +90,13 @@ exports.syncStatus = async (req, res) => {
             username, projectId, name, version, current_step, overall_status,
             overall_progress, step_status, last_activity, task
         } = value;
-        const userId = req.user_id;
-        const userExists = await User.findById(userId);
-        if (!userExists) {
-            console.log('user not found')
-            return res.status(RESPONSE_STATUS.NOT_FOUND).json(
-
-                createErrorResponse('User not found', 'USER_NOT_FOUND')
-            );
-        }
+        
+      
 
         session.startTransaction();
         const normalizedModel = normalizeModel(task);
         let project = await Project.findById(projectId).session(session);
-        console.log('project by id', project)
+        // console.log('project by id', project)
         if (!project) {
             console.log('project by id not found, searching by details')
             project = await Project.findOne({
@@ -196,103 +189,6 @@ exports.syncStatus = async (req, res) => {
         );
     } finally {
         await session.endSession();
-    }
-};
-
-exports.getProjectStatus = async (req, res) => {
-    try {
-        const { error, value } = projectQuerySchema.validate({
-            project_number: req.params.project_number,
-            include_steps: req.query.include_steps === 'true'
-        });
-
-        if (error) {
-            return res.status(RESPONSE_STATUS.BAD_REQUEST).json(
-                createErrorResponse('Invalid request parameters', 'VALIDATION_ERROR')
-            );
-        }
-
-        const { project_number, include_steps } = value;
-        const userId = req.user_id;
-        const selectFields = include_steps
-            ? '-otp -__v'
-            : '-otp -__v -stepData.step_status';
-
-        const project = await Project.findOne({
-            project_number: project_number,
-            userId: userId,
-            status: { $ne: 'DELETED' }
-        }).select(selectFields);
-
-        if (!project) {
-            return res.status(RESPONSE_STATUS.NOT_FOUND).json(
-                createErrorResponse('Project not found', 'PROJECT_NOT_FOUND')
-            );
-        }
-
-        const responseData = {
-            project: project.toObject(),
-            lastSync: project.stepData?.last_sync,
-            syncSource: project.stepData?.sync_source,
-            canSync: project.stepData?.sync_source === 'python_service'
-        };
-
-        res.status(RESPONSE_STATUS.SUCCESS).json(
-            createSuccessResponse(responseData, 'Project status retrieved successfully')
-        );
-    } catch (error) {
-        res.status(RESPONSE_STATUS.SERVER_ERROR).json(
-            createErrorResponse(RESPONSE_MESSAGES.SERVER_ERROR, 'INTERNAL_ERROR')
-        );
-    }
-};
-
-exports.getProjectsWithSyncStatus = async (req, res) => {
-    try {
-        const userId = req.user_id;
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
-        const skip = (page - 1) * limit;
-
-        const projects = await Project.find({
-            userId: userId,
-            status: { $ne: 'DELETED' }
-        })
-            .select('-otp -__v')
-            .sort({ updatedAt: -1 })
-            .skip(skip)
-            .limit(limit);
-
-        const totalProjects = await Project.countDocuments({
-            userId: userId,
-            status: { $ne: 'DELETED' }
-        });
-
-        const projectsWithSyncInfo = projects.map(project => ({
-            ...project.toObject(),
-            hasSyncData: !!project.stepData,
-            lastSyncedAt: project.stepData?.last_sync,
-            syncSource: project.stepData?.sync_source,
-            currentProgress: project.stepData?.overall_progress || 0
-        }));
-
-        const responseData = {
-            projects: projectsWithSyncInfo,
-            pagination: {
-                current_page: page,
-                total_pages: Math.ceil(totalProjects / limit),
-                total_items: totalProjects,
-                items_per_page: limit
-            }
-        };
-
-        res.status(RESPONSE_STATUS.SUCCESS).json(
-            createSuccessResponse(responseData, 'Projects retrieved successfully')
-        );
-    } catch (error) {
-        res.status(RESPONSE_STATUS.SERVER_ERROR).json(
-            createErrorResponse(RESPONSE_MESSAGES.SERVER_ERROR, 'INTERNAL_ERROR')
-        );
     }
 };
 
@@ -410,4 +306,10 @@ exports.updateApplicationStatus = async (req, res) => {
     }
 };
 
-
+exports.deleteProjectVersion = async(req,res)=> {
+try {
+    
+} catch (error) {
+    
+}
+}

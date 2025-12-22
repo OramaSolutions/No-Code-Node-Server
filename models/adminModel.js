@@ -79,8 +79,8 @@ AdminModel.findOne({}).then(success => {
     if (!success) {
 
         new AdminModel({
-            email: "admin@yopmail.com",
-            password: encryptString('admin@123'),
+            email: "aditya@oramasolutions.in",
+            password: encryptString('aditya@123'),
             profilePic: "https://res.cloudinary.com/a2karya80559188/image/upload/v1584446275/admin_nke1cg.jpg"
         }).save().then((success) => {
 

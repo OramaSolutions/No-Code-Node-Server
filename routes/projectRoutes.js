@@ -2,9 +2,11 @@ const express = require("express");
 const router = express.Router();
 const rateLimit = require('express-rate-limit');
 const { verifyToken } = require("../auth/verifyToken");
+const internalAuth = require("../auth/internalAuth");
 const jwt = require('jsonwebtoken');
 // const { validateSyncApiKey } = require("./yourMiddlewareFile"); 
 const projectController = require('../controller/projects/projectsController'); 
+const applicationsController = require('../controller/projects/applicationsController');
 const licenseController = require('../controller/projects/licecnseIssuer');
 const D_S_K = 'mimimimi'
 
@@ -16,18 +18,8 @@ function generateSignedUrl({ filename, username, task, project, version, userId,
   );
   return `fetch_file/${encodeURIComponent(filename)}?token=${token}`;
 }
-
-
-
-router.post('/update-application-status', projectController.updateApplicationStatus)
-
-router.post('/generate_license', licenseController.issueLicense);
-router.post('/deactivate_license', licenseController.deactivateLicense);
-
-// Apply verifyToken middleware globally if needed
-router.use(verifyToken);
-
 // Rate limiting for sync operations
+
 const syncRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
@@ -39,22 +31,18 @@ const syncRateLimit = rateLimit({
   legacyHeaders: false,
 });
 
+router.post('/update-application-status',internalAuth, projectController.updateApplicationStatus)
+
 router.put('/sync-status',
   syncRateLimit,
-  // validateSyncApiKey,
+  internalAuth,
   projectController.syncStatus
 );
 
-router.get('/project-status/:project_number',
-  projectController.getProjectStatus
-);
-
-router.get('/projects-with-sync-status',
-  projectController.getProjectsWithSyncStatus
-);
 
 //  route for check(auth) and update build status in db 
 router.post('/update-build-status',
+  internalAuth,
   projectController.updateBuildStatus
 );
 
@@ -69,8 +57,14 @@ router.get('/get-download-url/:filename', (req, res) => {
   res.json({ url: signedUrl });
 });
 
+router.post(
+  "/build-image-pri",
+  verifyToken,
+  applicationsController.buildImagePri
+);
 
-
+router.post('/generate_license', licenseController.issueLicense);
+router.post('/deactivate_license', licenseController.deactivateLicense);
 
 
 module.exports = router;

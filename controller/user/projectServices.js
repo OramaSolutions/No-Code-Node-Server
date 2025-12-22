@@ -560,6 +560,7 @@ const myProjectList = async (req, res) => {
             .json({ message: RESPONSE_MESSAGES.SERVER_ERROR });
     }
 }
+
 const myLatestProjectList = async (req, res) => {
     try {
         const userData = await User.findOne({ _id: req.user_id })
@@ -652,6 +653,7 @@ const myLatestProjectList = async (req, res) => {
             .json({ message: RESPONSE_MESSAGES.SERVER_ERROR });
     }
 }
+
 const versionDropDown = async (req, res) => {
     try {
         const userData = await User.findOne({ _id: req.user_id })

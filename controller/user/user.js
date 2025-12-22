@@ -4,10 +4,8 @@ const commonFunctions = require("../../commonFunctions")
 const User = require('../../models/userModel');
 const Help = require('../../models/helpAndSupportModel');
 const jwt = require('jsonwebtoken');
-var moment = require("moment");
-const mongoose = require("mongoose");
-var xlsx = require('node-xlsx').default
-const fs = require('fs');
+const crypto = require("crypto");
+const { createAccessToken, createRefreshToken } = require('../../auth/tokens');
 const {
     body,
     query,
@@ -16,7 +14,7 @@ const {
     oneOf,
     validationResult
 } = require('express-validator');
-const { group } = require('console');
+
 const errorFormatter = ({
     location,
     msg,
@@ -28,6 +26,227 @@ const errorFormatter = ({
 };
 
 
+
+
+// TODO - in userSignup need to integrate email with the password token link 
+const userSignup = async (req, res) => {
+    try {
+        const {
+            userName,
+            name,
+            email,
+            phoneNumber,
+            city,
+            company,
+            designation,
+            usageFor
+        } = req.body;
+
+        // ✅ Check if user already exists
+        const existingUser = await User.findOne({
+            $or: [{ email }, { userName }]
+        });
+
+        if (existingUser) {
+            return res.status(RESPONSE_STATUS.BAD_REQUEST).send({
+                code: RESPONSE_STATUS.BAD_REQUEST,
+                message: "User already exists"
+            });
+        }
+
+        // ✅ Generate User Number
+        const count = await User.countDocuments();
+        const user_number = `USR${String(count + 1).padStart(3, "0")}`;
+
+        // ✅ Generate secure token for password setup
+        const passwordSetupToken = crypto.randomBytes(32).toString("hex");
+
+        // ✅ Set 7-day trial
+        const trialDate = new Date();
+        trialDate.setDate(trialDate.getDate() + 7);
+
+        // ✅ Create user (NO PASSWORD YET)
+        const newUser = new User({
+            user_number,
+            userName,
+            name,
+            email,
+            phoneNumber,
+            city,
+            company,
+            designation,
+            usageFor,
+
+            userStatus: USER_STATUS.PENDING,
+
+            passwordSetupToken,
+            passwordSetupExpiry: Date.now() + 15 * 60 * 1000, // 15 minutes
+
+            trialExpiresAt: trialDate,
+            isTrialExpired: false
+        });
+
+        await newUser.save();
+
+        // ✅ TEMP password setup link (you can email this)
+        const passwordLink = `${process.env.FRONTEND_URL}/set-password?token=${passwordSetupToken}`;
+        commonFunctions.sendSignupLinkMail(email, passwordLink, (err, info) => {
+            if (err) {
+                console.log("Email sending failed:", err);
+                return res.status(500).json({
+                    code: RESPONSE_STATUS.SERVER_ERROR,
+                    message: "Failed to send verification email."
+                });
+            }
+
+            // Email success → return Signup successful
+            return res.status(RESPONSE_STATUS.SUCCESS).send({
+                code: RESPONSE_STATUS.SUCCESS,
+                message: "Signup successful. Please check your email to set password.",
+                userId: newUser._id,
+                userName
+            });
+        });
+
+    } catch (error) {
+        console.log("Signup Error:", error);
+        return res.status(RESPONSE_STATUS.SERVER_ERROR).send({
+            code: RESPONSE_STATUS.SERVER_ERROR,
+            message: RESPONSE_MESSAGES.SERVER_ERROR
+        });
+    }
+};
+
+const setPassword = async (req, res) => {
+    try {
+        const { token } = req.query;
+        const { password } = req.body;
+
+        if (!token || !password) {
+            return res.status(RESPONSE_STATUS.BAD_REQUEST).send({
+                code: RESPONSE_STATUS.BAD_REQUEST,
+                message: "Token and password are required"
+            });
+        }
+
+        const user = await User.findOne({
+            passwordSetupToken: token,
+            passwordSetupExpiry: { $gt: Date.now() }
+        });
+
+        if (!user) {
+            return res.status(RESPONSE_STATUS.BAD_REQUEST).send({
+                code: RESPONSE_STATUS.BAD_REQUEST,
+                message: "Invalid or expired token"
+            });
+        }
+
+        // ✅ Encrypt password
+        const salt = await bcrypt.genSalt(8);
+        const encryptedPassword = await bcrypt.hash(password, salt);
+
+        user.password = encryptedPassword;
+        user.passwordSetupToken = undefined;
+        user.passwordSetupExpiry = undefined;
+        user.userStatus = USER_STATUS.ACTIVE;
+
+        await user.save();
+
+        return res.status(RESPONSE_STATUS.SUCCESS).send({
+            code: RESPONSE_STATUS.SUCCESS,
+            message: "Password set successfully. You can now login."
+        });
+
+    } catch (error) {
+        console.log("Set Password Error:", error);
+        return res.status(RESPONSE_STATUS.SERVER_ERROR).send({
+            code: RESPONSE_STATUS.SERVER_ERROR,
+            message: RESPONSE_MESSAGES.SERVER_ERROR
+        });
+    }
+};
+
+const userLogin = async (req, res) => {
+    try {
+        const activeUser = await User.findOne({ email: req.body.email })
+        if (!activeUser) {
+            return res.status(RESPONSE_STATUS.UNAUTHORIZED).send({ code: RESPONSE_STATUS.UNAUTHORIZED, message: "User not found" });
+        }
+        let password_verify = bcrypt.compareSync(req.body.password, activeUser.password);
+
+        if (!password_verify) {
+            return res.status(RESPONSE_STATUS.UNAUTHORIZED).send({ code: RESPONSE_STATUS.UNAUTHORIZED, message: RESPONSE_MESSAGES.INVALID_CRED });
+        }
+     
+
+
+        const accessToken = createAccessToken(activeUser._id);
+        const refreshToken = createRefreshToken(activeUser._id, activeUser.tokenVersion);
+
+
+        res.cookie("access_token", accessToken, {
+            httpOnly: true,
+            sameSite: "Lax",
+            secure: process.env.NODE_ENV === "production",
+            maxAge: 15 * 60 * 1000, //15 mins
+            path: "/",
+        });
+
+        res.cookie("refresh_token", refreshToken, {
+            httpOnly: true,
+            sameSite: "Lax",
+            secure: process.env.NODE_ENV === "production",
+            maxAge: 30 * 24 * 60 * 60 * 1000, // 30days
+            path: "/api/v1/user/refresh", // 🔒 VERY IMPORTANT
+        });
+
+        // CSRF token (readable by JS)
+        res.cookie("csrf_token", crypto.randomUUID(), {
+            httpOnly: false,
+            sameSite: "Lax",
+            secure: process.env.NODE_ENV === "production",
+        });
+
+        return res.status(RESPONSE_STATUS.SUCCESS).send({ code: RESPONSE_STATUS.SUCCESS, message: RESPONSE_MESSAGES.LOGIN_SUCCESS, activeUser });
+    } catch (error) {
+        console.log(error)
+        return res
+            .status(RESPONSE_STATUS.SERVER_ERROR)
+            .json({ message: RESPONSE_MESSAGES.SERVER_ERROR });
+    }
+}
+
+const logoutUser = async (req, res) => {
+    try {
+        const user = await User.findById(req.user_id);
+        if (user) {
+            user.tokenVersion += 1;
+            await user.save();
+        }
+
+        res.clearCookie("access_token");
+        res.clearCookie("refresh_token");
+        res.clearCookie("csrf_token");
+
+        res.sendStatus(200);
+
+    } catch (error) {
+        console.log("Logout Error:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Server error"
+        });
+    }
+};
+
+const getMe = async (req, res) => {
+    try {
+        const user = await User.findById(req.user_id).select("-password");
+        res.status(200).json({ user });
+    } catch {
+        res.status(401).json({ message: "Not authenticated" });
+    }
+};
 
 const uploadDocumnet = async (req, res) => {
     try {
@@ -41,36 +260,6 @@ const uploadDocumnet = async (req, res) => {
         }
         // let result = req.files.files;
         // console.log("ddadaad", result)
-    } catch (error) {
-        console.log(error)
-        return res
-            .status(RESPONSE_STATUS.SERVER_ERROR)
-            .json({ message: RESPONSE_MESSAGES.SERVER_ERROR });
-    }
-}
-
-const userLogin = async (req, res) => {
-    try {
-        const activeUser = await User.findOne({ userName: req.body.userName })
-        if (!activeUser) {
-            return res.status(RESPONSE_STATUS.UNAUTHORIZED).send({ code: RESPONSE_STATUS.UNAUTHORIZED, message: "User not found" });
-        }
-        let password_verify = bcrypt.compareSync(req.body.password, activeUser.password);
-        if (!password_verify) {
-            return res.status(RESPONSE_STATUS.UNAUTHORIZED).send({ code: RESPONSE_STATUS.UNAUTHORIZED, message: RESPONSE_MESSAGES.INVALID_CRED });
-        }
-        const secret = process.env.JWT_TOKEN_SECRET || 'orama_solutions';
-        console.log('Secret Key in login>>>', secret);
-        let token = jwt.sign({ user_id: activeUser._id }, secret)
-        activeUser.jwtToken = token;
-        await activeUser.save();
-        res.cookie('token', token, {
-            httpOnly: true,
-            secure: false, // true - only over HTTPS(for production) flase - for locally
-            sameSite: 'Lax', // Lax when backend and frontend are on different domains and can be strict if they are on the same domain.
-            maxAge: 60 * 60 * 1000 // 1 hour, adjust as needed
-        });
-        return res.status(RESPONSE_STATUS.SUCCESS).send({ code: RESPONSE_STATUS.SUCCESS, message: RESPONSE_MESSAGES.LOGIN_SUCCESS, token: token, activeUser });
     } catch (error) {
         console.log(error)
         return res
@@ -113,7 +302,7 @@ const forgetEmail = async (req, res) => {
     }
 }
 
-const setPassword = async (req, res) => {
+const resetPassword = async (req, res) => {
     try {
         const token = req.query.token
         let id
@@ -145,6 +334,7 @@ const setPassword = async (req, res) => {
             .json({ message: RESPONSE_MESSAGES.SERVER_ERROR });
     }
 }
+
 const logout = async (req, res) => {
     try {
         const activeUser = await User.findOne({ _id: req.user_id })
@@ -163,6 +353,7 @@ const logout = async (req, res) => {
     }
 
 }
+
 const viewProfile = async (req, res) => {
     try {
         const activeUser = await User.findOne({ _id: req.user_id })
@@ -179,6 +370,7 @@ const viewProfile = async (req, res) => {
     }
 
 }
+
 const editProfile = async (req, res) => {
     try {
         const activeUser = await User.findOne({ _id: req.user_id })
@@ -215,6 +407,7 @@ const deleteProfile = async (req, res) => {
             .json({ message: RESPONSE_MESSAGES.SERVER_ERROR });
     }
 };
+
 const addSupport = async (req, res) => {
     try {
         await body('subject').not().isEmpty().run(req);
@@ -281,6 +474,7 @@ const addSupport = async (req, res) => {
             .json({ message: RESPONSE_MESSAGES.SERVER_ERROR });
     }
 }
+
 const changePassword = async (req, res) => {
     try {
         const userData = await User.findOne({ _id: req.user_id });
@@ -307,16 +501,21 @@ const changePassword = async (req, res) => {
             .json({ message: RESPONSE_MESSAGES.SERVER_ERROR });
     }
 };
+
 module.exports = {
-    userLogin: userLogin,
-    forgetEmail,
+    userSignup,
     setPassword,
+    userLogin,
+    getMe,
+    forgetEmail,
+    resetPassword,
     viewProfile: viewProfile,
     editProfile: editProfile,
     deleteProfile: deleteProfile,
     logout: logout,
     addSupport,
     uploadDocumnet,
-    changePassword
+    changePassword,
+    logoutUser
 }
 

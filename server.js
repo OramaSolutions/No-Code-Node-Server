@@ -6,7 +6,9 @@ const https = require('https');
 const fs = require('fs');
 const db = require("./db");
 const { spawn } = require('child_process');
+const cookieParser = require('cookie-parser');
 const path = require('path');
+
 require("./cronTab");
 // const { Server } = require("socket.io");
 
@@ -23,9 +25,11 @@ const bodyParser = require('body-parser')
 const morgan = require('morgan');
 
 app.use(bodyParser.json({ limit: '50mb' }));
+app.use(cookieParser());
+
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 app.use(morgan('combined'))
-app.set('trust proxy', true);
+app.set('trust proxy', false); //false for http true for https
 
 //mongoose.set('useNewUrlParser', true);
 // mongoose.set('useFindAndModify', false);
@@ -34,10 +38,18 @@ app.set('trust proxy', true);
 
 // const cors = require('cors');
 
+// app.use(cors({
+//   origin: true,           // Reflect request origin (allows all)
+//   credentials: true       // Allow cookies/auth headers
+// }));
+
 app.use(cors({
-  origin: true,           // Reflect request origin (allows all)
-  credentials: true       // Allow cookies/auth headers
+  origin: [process.env.FRONTEND_URL, process.env.FRONTEND_TEMP_URL],
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization", "x-csrf-token"],
 }));
+
 
 //==========================Request Console=======================//
 
@@ -113,7 +125,7 @@ app.post('/download_dataset/:projectName', async (req, res) => {
       return res.status(400).json({ error: 'No valid OCR image-label pairs found' });
     }
   } else {
-    
+
     if (fs.existsSync(classesPath)) filesToInclude.push('classes.txt');
     const labelFiles = fs.readdirSync(labelsDir);
     for (const label of labelFiles) {
@@ -156,6 +168,7 @@ app.post('/download_dataset/:projectName', async (req, res) => {
     }
   });
 });
+
 
 const port = 3100;
 var server = app.listen(port, () => {

@@ -29,7 +29,7 @@ const sendMail = (email, subject, content, callback) => {
         service: "gmail",
         auth: {
             user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS
+            pass: process.env.EMAIL_PASS,
         },
     });
     let mailOptions = {
@@ -170,16 +170,18 @@ const sendForgetMail = (email, subject, link, content, callback) => {
         return callback(null, info.response);
     });
 };
+
+
 const sendOtpMail = (email, subject, otp, content, callback) => {
     let transporter = nodemailer.createTransport({
         service: "gmail",
         auth: {
-            user: "shivammobu@gmail.com",
-            pass: "wgnqjryopvhfaqrh",
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
         },
     });
     let mailOptions = {
-        from: "No reply<fdfsd8055@gmail.com>",
+        from: `No reply<${process.env.EMAIL_USER}>`,
         to: email,
         subject: subject,
         html: `    
@@ -294,6 +296,132 @@ const sendOtpMail = (email, subject, otp, content, callback) => {
         return callback(null, info.response);
     });
 };
+
+const sendSignupLinkMail = (email, link, callback) => {
+    let transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
+        },
+    });
+    let mailOptions = {
+        from: `No reply<${process.env.EMAIL_USER}>`,
+        to: email,
+        subject: 'Orama Solutions - New Signup verification link.',
+        html: `    
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Email Verification</title>
+</head>
+
+<body style="margin:0; padding:0; background:#f4f4f4; font-family: Arial, sans-serif;">
+
+  <!-- Outer Wrapper -->
+  <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f4f4f4; padding:40px 0;">
+    <tr>
+      <td align="center">
+
+        <!-- Card Container -->
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:650px; background:#ffffff; border-radius:12px; padding:30px; box-shadow:0 4px 12px rgba(0,0,0,0.05);">
+
+          <!-- Logo -->
+          <tr>
+            <td align="center" style="padding-bottom:25px; border-bottom:1px solid #eee;">
+              <img src="https://oramasolutions.in/wp-content/uploads/2023/02/logo.jpg" alt="Logo" style="width:150px; height:auto;">
+            </td>
+          </tr>
+
+          <!-- Title -->
+          <tr>
+            <td style="padding-top:30px;">
+              <h2 style="margin:0; font-size:24px; font-weight:600; color:#333;">Email Verification Required</h2>
+            </td>
+          </tr>
+
+          <!-- Intro -->
+          <tr>
+            <td style="padding:15px 0 10px 0; color:#555; line-height:26px; font-size:15px;">
+              Dear User,<br><br>
+              Thank you for registering with us! To complete your signup, please verify that you are the owner of this email address.
+            </td>
+          </tr>
+
+          <!-- Instruction -->
+          <tr>
+            <td style="padding:5px 0 20px 0; color:#555; line-height:26px; font-size:15px;">
+              Click the button below to verify your email and set a new password for your account:
+            </td>
+          </tr>
+
+          <!-- CTA Button -->
+          <tr>
+            <td align="center" style="padding:10px 0 25px 0;">
+              <a href="${link}" 
+                 style="background:#4A90E2; color:#fff; padding:14px 28px; text-decoration:none; 
+                        font-size:15px; border-radius:6px; display:inline-block; font-weight:600;">
+                Verify Email & Set Password
+              </a>
+            </td>
+          </tr>
+
+          <!-- Fallback Link -->
+          <tr>
+            <td style="color:#777; font-size:13px; line-height:20px; padding-bottom:25px;">
+              If the button doesn’t work, copy and paste this link into your browser:<br>
+              <span style="color:#4A90E2; word-break:break-all;">${link}</span>
+            </td>
+          </tr>
+
+          <!-- Expiry Note -->
+          <tr>
+            <td style="color:#555; font-size:14px; padding-bottom:15px;">
+              This link is valid for the next <strong>10 minutes</strong>.
+            </td>
+          </tr>
+
+          <!-- Warning -->
+          <tr>
+            <td style="color:#777; font-size:13px; line-height:22px; padding-bottom:20px;">
+              If you did not request this verification email, please ignore this message safely.
+            </td>
+          </tr>
+
+          <!-- Signature -->
+          <tr>
+            <td style="color:#555; font-size:15px; padding-top:10px; line-height:24px;">
+              Thank you,<br>
+              <strong>Orama Solutions</strong>
+            </td>
+          </tr>
+
+        </table>
+        <!-- End Card -->
+
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>
+`,
+    };
+    transporter.sendMail(mailOptions, function (error, info) {
+        if (error) {
+            {
+                console.log(error);
+                console.error("email failed for ", email);
+                return callback(error, null);
+            }
+        }
+        console.info("This mail sent to >> " + info.envelope.to);
+        return callback(null, info.response);
+    });
+};
+
 const sendPasswordMail = (
     email,
     subject,
@@ -457,6 +585,7 @@ module.exports = {
     sendMail: sendMail,
     getRandomNumber,
     searchAsPerDateTime,
+    sendSignupLinkMail,
     sendForgetMail,
     s3
     // pdfGenerate: pdfGenerate

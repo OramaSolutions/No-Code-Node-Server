@@ -406,11 +406,64 @@ const searchUserList = async (req, res) => {
             .json({ message: RESPONSE_MESSAGES.SERVER_ERROR });
     }
 }
+
+const deleteUser = async (req, res) => {
+    try {
+        await body('id').not().isEmpty().run(req);
+        const errors = validationResult(req).formatWith(errorFormatter);
+        const errs = errors.array();
+
+        if (!errors.isEmpty()) {
+            return res.status(RESPONSE_STATUS.NOT_FOUND).send({
+                code: RESPONSE_STATUS.NOT_FOUND,
+                message: "Please check your request",
+                errs,
+            });
+        }
+
+        // Verify admin user
+        const admin = await Admin.findOne({ _id: req.user_id });
+        if (!admin) {
+            return res.status(RESPONSE_STATUS.NOT_FOUND).send({
+                code: RESPONSE_STATUS.NOT_FOUND,
+                message: RESPONSE_MESSAGES.NOT_FOUND,
+            });
+        }
+
+        // Check if user exists
+        const userToDelete = await User.findOne({ _id: req.body.id });
+        if (!userToDelete) {
+            return res.status(RESPONSE_STATUS.NOT_FOUND).send({
+                code: RESPONSE_STATUS.NOT_FOUND,
+                message: "User not found",
+            });
+        }
+
+        // Optionally, also delete related data like projects or logs
+        // await Project.deleteMany({ userId: userToDelete._id });
+
+        // Permanently delete user
+        await User.deleteOne({ _id: req.body.id });
+
+        return res.status(RESPONSE_STATUS.SUCCESS).send({
+            code: RESPONSE_STATUS.SUCCESS,
+            message: "User permanently deleted successfully",
+        });
+
+    } catch (error) {
+        console.error("Delete User Error:", error);
+        return res.status(RESPONSE_STATUS.SERVER_ERROR).json({
+            message: RESPONSE_MESSAGES.SERVER_ERROR,
+        });
+    }
+};
+
 module.exports = {
     addUser,
     editUser,
     userList,
     statusChanged: statusChanged,
     projectList,
-    searchUserList
+    searchUserList,
+    deleteUser
 }

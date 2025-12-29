@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const { encryptString } = require("../../commonFunctions")
 const commonFunctions = require("../../commonFunctions")
 const Admin = require('../../models/adminModel');
-
+const { createAdminToken } = require('../../auth/tokens')
 
 var moment = require("moment");
 ////const faq = require('../../models/faq');
@@ -46,11 +46,24 @@ const adminLogin = async (req, res) => {
         else {
             var askedRole = "All"
         }
-        let token = jwt.sign({ user_id: activeUser._id }, process.env.JWT_TOKEN_SECRET)
-        activeUser.jwtToken = token;
-        activeUser.save();
-        return res.status(RESPONSE_STATUS.SUCCESS).send({ code: RESPONSE_STATUS.SUCCESS, message: RESPONSE_MESSAGES.LOGIN_SUCCESS, token: token, activeUser, askedRole });
-    } catch (error) {
+        // let token = jwt.sign({ user_id: activeUser._id }, process.env.JWT_TOKEN_SECRET)
+        const accessToken = createAdminToken(activeUser._id);
+        // activeUser.jwtToken = token;
+        // activeUser.save();
+        // console.log('accessTOken Created', accessToken)
+//  FORCE secure TRUE for cross-site cookies so that samesite can be None
+
+
+        res.cookie("admin_access_token", accessToken, {
+            httpOnly: true,
+            sameSite: "None",
+            secure: true,
+            maxAge: 24 * 60 * 60 * 1000, //24 hrs
+            path: "/",
+        });
+
+        return res.status(RESPONSE_STATUS.SUCCESS).send({ code: RESPONSE_STATUS.SUCCESS, message: RESPONSE_MESSAGES.LOGIN_SUCCESS, activeUser, askedRole });
+    } catch (error) {   
         console.log(error)
         return res
             .status(RESPONSE_STATUS.SERVER_ERROR)
@@ -65,8 +78,9 @@ const logout = async (req, res) => {
         if (!activeUser) {
             return res.status(RESPONSE_STATUS.UNAUTHORIZED).send({ code: RESPONSE_STATUS.UNAUTHORIZED, message: RESPONSE_MESSAGES.INVALID_CRED });
         }
-        activeUser.jwtToken = "";
-        activeUser.save();
+        // activeUser.jwtToken = "";
+        // activeUser.save();
+        res.clearCookie("admin_access_token");
         return res.status(RESPONSE_STATUS.SUCCESS).send({ code: RESPONSE_STATUS.SUCCESS, message: "Logout Successfully" });
     } catch (error) {
         return res

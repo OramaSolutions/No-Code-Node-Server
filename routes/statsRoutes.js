@@ -1,10 +1,10 @@
 // statsRoutes.js
 const express = require('express');
 const router = express.Router();
-const { verifyToken } = require("../auth/verifyToken");
+const { verifyAdminToken } = require("../auth/verifyToken");
 const statsController = require('../controller/statsController');
 
-router.use(verifyToken);
+router.use(verifyAdminToken);
 
 // User routes
 router.get('/users/total', statsController.getTotalUsers);

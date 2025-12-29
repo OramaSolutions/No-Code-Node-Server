@@ -52,12 +52,30 @@ const {
 
 function verifyToken(req, res, next) {
     const token = req.cookies.access_token;
+    // console.log('>>>>>>>>', token)
     if (!token) return res.sendStatus(401);
 
     try {
         const payload = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
         req.user_id = payload.user_id;
-        
+        // console.log('>>>req.userid',payload)
+
+        next();
+    } catch {
+        return res.sendStatus(401);
+    }
+}
+
+function verifyAdminToken(req, res, next) {
+    const token = req.cookies.admin_access_token;
+    // console.log('>>>>>>>>', token)
+    if (!token) return res.sendStatus(401);
+
+    try {
+        const payload = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+        req.user_id = payload.user_id;
+        // console.log('>>>req.userid',payload)
+
         next();
     } catch {
         return res.sendStatus(401);
@@ -67,6 +85,10 @@ function verifyToken(req, res, next) {
 
 
 
-exports.verifyToken = verifyToken;
+// exports.verifyToken = verifyToken;
+module.exports = {
+    verifyToken,
+    verifyAdminToken,
 
+};
 

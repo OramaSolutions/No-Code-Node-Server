@@ -91,12 +91,17 @@ const project = new mongoose.Schema({
       min: 0,
       max: 100
     },
+    // step_status: {
+    //   labelled: { type: stepStatusSchema, default: () => ({}) },
+    //   HyperTune: { type: stepStatusSchema, default: () => ({}) },
+    //   infer: { type: stepStatusSchema, default: () => ({}) },
+    //   remark: { type: stepStatusSchema, default: () => ({}) },
+    //   application: { type: stepStatusSchema, default: () => ({}) }
+    // },
     step_status: {
-      labelled: { type: stepStatusSchema, default: () => ({}) },
-      HyperTune: { type: stepStatusSchema, default: () => ({}) },
-      infer: { type: stepStatusSchema, default: () => ({}) },
-      remark: { type: stepStatusSchema, default: () => ({}) },
-      application: { type: stepStatusSchema, default: () => ({}) }
+      type: Map,
+      of: stepStatusSchema,
+      default: {}
     },
     last_sync: { type: Date, default: Date.now },
     sync_source: { type: String, default: 'python_service' },

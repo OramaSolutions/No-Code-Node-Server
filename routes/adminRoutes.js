@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { verifyToken } = require("../auth/verifyToken");
+const { verifyAdminToken } = require("../auth/verifyToken");
 const adminServices = require('../controller/admin/adminService');
 const userController = require('../controller/admin/userManagement');
 const staticController = require('../controller/admin/staticManagement');
@@ -36,7 +36,7 @@ router.put("/setPassword", adminServices.setPassword);
 
 
 
-router.use(verifyToken);
+router.use(verifyAdminToken);
 router.get("/logout", adminServices.logout);
 router.put("/changePassword", adminServices.changePassword);
 router.get("/count", adminServices.count);
@@ -64,6 +64,7 @@ router.post("/updateStatusCloseOpen", projectController.updateStatusCloseOpen);
 router.post("/approvedStatusChanged", projectController.approvedStatusChanged);
 router.get("/projectList", projectController.projectList);
 router.post("/addRemark", projectController.addRemark);
+router.post("/getRemark", projectController.getProjectRemarks)
 
 //=======================Notification==============
 router.post("/addNotification", notificationController.addNotification);

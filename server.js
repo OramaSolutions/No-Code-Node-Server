@@ -44,7 +44,7 @@ app.set('trust proxy', false); //false for http true for https
 // }));
 
 app.use(cors({
-  origin: [process.env.FRONTEND_URL, process.env.FRONTEND_TEMP_URL],
+  origin: [process.env.FRONTEND_URL, process.env.FRONTEND_TEMP_URL, process.env.ADMIN_URL],
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization", "x-csrf-token"],

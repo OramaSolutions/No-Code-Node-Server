@@ -161,7 +161,7 @@ const projectCheck = async (req, res) => {
         if (project) {
             // Project exists for this user, same name, same model: suggest new version
             return res.status(402).send({
-                code: 402,  
+                code: 402,
                 message: "You have already created a project with this name under the same model. Do you want to create a new version"
             });
         }
@@ -180,7 +180,140 @@ const projectCheck = async (req, res) => {
 
 
 
+const MODEL_STEPS = {
+    objectdetection: [
+        "labelled",
+        "augmented",
+        "images",
+        "dataSplit",
+        "HyperTune",
+        "infer",
+        "remark",
+        "application",
+    ],
+    classification: [
+        "labelled",
+        "augmented",
+        "images",
+        "dataSplit",
+        "HyperTune",
+        "infer",
+        "remark",
+        "application",
+    ],
+    defectdetection: [
+        "labelled",
+        "HyperTune",
+        "infer",
+        "remark",
+        "application",
+    ],
+};
+const buildStepStatus = (model) => {
+    const steps = MODEL_STEPS[model] || [];
+    const stepStatus = {};
 
+    steps.forEach((step) => {
+        stepStatus[step] = {
+            status: "pending",
+            validation_errors: [],
+            last_modified: new Date(),
+        };
+    });
+
+    return stepStatus;
+};
+
+
+// const addProject = async (req, res) => {
+//     try {
+//         await body('name').not().isEmpty().run(req);
+//         const errors = validationResult(req).formatWith(errorFormatter);
+//         if (!errors.isEmpty()) {
+//             return res.status(RESPONSE_STATUS.NOT_FOUND).send({
+//                 code: RESPONSE_STATUS.NOT_FOUND,
+//                 message: "Please check your request",
+//                 errs: errors.array()
+//             });
+//         }
+
+//         const askedAdmin = await User.findOne({ _id: req.user_id });
+//         if (!askedAdmin) {
+//             return res.status(RESPONSE_STATUS.NOT_FOUND).send({
+//                 code: RESPONSE_STATUS.NOT_FOUND,
+//                 message: RESPONSE_MESSAGES.NOT_FOUND
+//             });
+//         }
+
+//         const { name, model, versionNumber } = req.body;
+//         const normalizedModel = normalizeModel(model);
+//         // Check if project with same userId, name, model, versionNumber already exists
+//         const existingProject = await Projects.findOne({
+//             userId: req.user_id,
+//             name: name,
+//             model: normalizedModel,
+//             versionNumber: versionNumber
+//         });
+
+//         if (existingProject) {
+//             return res.status(RESPONSE_STATUS.CONFLICT).send({
+//                 code: RESPONSE_STATUS.CONFLICT,
+//                 message: "This project already exists with the same version"
+//             });
+//         }
+
+//         // IdGenerator to safely generate project_number
+//         class IdGenerator {
+//             constructor(prefix = '', start = 0) {
+//                 this.prefix = prefix;
+//                 this.currentId = Number(start) || 0;
+//             }
+//             generateId() {
+//                 this.currentId++;
+//                 return `${this.prefix}${this.currentId}`;
+//             }
+//         }
+
+//         // Find the latest project_number issued, extract numeric portion safely
+//         const lastProject = await Projects.find({ userId: req.user_id, status: { $in: ["ACTIVE", "INACTIVE"] } })
+//             .sort({ createdAt: -1 })
+//             .limit(1);
+
+//         let prevId = 100;  // Default starting id
+//         if (lastProject.length > 0) {
+//             const lastProjectNumber = lastProject[0].project_number || '';
+//             // Extract numeric part from project_number, e.g. "PROC101" -> 101
+//             const numericPart = lastProjectNumber.replace(/\D/g, '');
+//             prevId = parseInt(numericPart, 10) || 100;
+//         }
+
+//         const userIdGenerator = new IdGenerator('PROC', prevId);
+//         const genId = userIdGenerator.generateId(); // e.g., PROC101
+
+//         const newProjectData = {
+//             name,
+//             model: normalizedModel,
+//             versionNumber,
+//             userId: req.user_id,
+//             project_number: genId,
+//             status: "ACTIVE" // Or default as needed
+//         };
+
+//         const addedProject = await Projects.create(newProjectData);
+
+//         return res.status(RESPONSE_STATUS.SUCCESS).json({
+//             code: RESPONSE_STATUS.SUCCESS,
+//             message: "Project added successfully",
+//             data: addedProject
+//         });
+
+//     } catch (error) {
+//         console.error(error);
+//         return res.status(RESPONSE_STATUS.SERVER_ERROR).json({
+//             message: RESPONSE_MESSAGES.SERVER_ERROR
+//         });
+//     }
+// }
 
 const addProject = async (req, res) => {
     try {
@@ -246,6 +379,13 @@ const addProject = async (req, res) => {
 
         const userIdGenerator = new IdGenerator('PROC', prevId);
         const genId = userIdGenerator.generateId(); // e.g., PROC101
+        const stepsForModel = MODEL_STEPS[normalizedModel];
+        if (!stepsForModel) {
+            return res.status(RESPONSE_STATUS.BAD_REQUEST).json({
+                code: RESPONSE_STATUS.BAD_REQUEST,
+                message: "Invalid model type",
+            });
+        }
 
         const newProjectData = {
             name,
@@ -253,7 +393,15 @@ const addProject = async (req, res) => {
             versionNumber,
             userId: req.user_id,
             project_number: genId,
-            status: "ACTIVE" // Or default as needed
+            status: "ACTIVE",
+
+            stepData: {
+                current_step: stepsForModel[0], // first step
+                overall_progress: 0,
+                step_status: buildStepStatus(normalizedModel),
+                last_sync: new Date(),
+                sync_source: "node_service",
+            },
         };
 
         const addedProject = await Projects.create(newProjectData);

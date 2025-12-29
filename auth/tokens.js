@@ -14,7 +14,11 @@ const createRefreshToken = (userId, tokenVersion) =>
     { expiresIn: "30d" }
   );
 
+const createAdminToken = (adminId) =>
+  jwt.sign({ user_id: adminId }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "1d" })
+
 module.exports = {
   createAccessToken,
   createRefreshToken,
+  createAdminToken,
 };

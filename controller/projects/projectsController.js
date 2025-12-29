@@ -8,6 +8,7 @@ const {
     RESPONSE_STATUS,
     RESPONSE_MESSAGES
 } = require('../../constants');
+const crypto = require('crypto')
 
 const syncStatusSchema = Joi.object({
     username: Joi.string().min(1).max(50).required(),
@@ -72,126 +73,241 @@ const updateApplicationSchema = Joi.object({
     app_id: Joi.string().optional().allow(null, '')
 });
 
-// Controller for sync status endpoint
+
+// ------------------------for sync ---------------------------
+// MODEL → STEPS MAP
+const MODEL_STEPS = {
+    objectdetection: [
+        "labelled",
+        "augmented",
+        "images",
+        "dataSplit",
+        "HyperTune",
+        "infer",
+        "remark",
+        "application",
+    ],
+    classification: [
+        "labelled",
+        "augmented",
+        "images",
+        "dataSplit",
+        "HyperTune",
+        "infer",
+        "remark",
+        "application",
+    ],
+    defectdetection: [
+        "labelled",
+        "HyperTune",
+        "infer",
+        "remark",
+        "application",
+    ],
+};
+
+// 🔒 Normalize incoming step_status (ONLY fields DB cares about)
+const normalizeIncomingSteps = (incoming = {}, model) => {
+    const allowedSteps = new Set(MODEL_STEPS[model] || []);
+    const sanitized = {};
+
+    for (const [step, data] of Object.entries(incoming)) {
+        if (!allowedSteps.has(step)) continue;
+
+        sanitized[step] = {
+            status: data.status || "pending",
+            validation_errors: data.validation_errors || [],
+            last_modified: data.last_modified
+                ? new Date(data.last_modified)
+                : new Date(),
+        };
+    }
+
+    return sanitized;
+};
+
+// 🔒 Stable stringify for hashing
+const stableStringifyObject = (obj) =>
+    JSON.stringify(
+        Object.keys(obj)
+            .sort()
+            .reduce((acc, k) => {
+                acc[k] = obj[k];
+                return acc;
+            }, {})
+    );
+
 exports.syncStatus = async (req, res) => {
-    // console.log("Request Body for sync status:", req.body);
     const session = await mongoose.startSession();
 
     try {
+        // 1️⃣ Validate request
         const { error, value } = syncStatusSchema.validate(req.body);
         if (error) {
-            console.log('validation error', error);
-            return res.status(RESPONSE_STATUS.BAD_REQUEST).json(
-                createErrorResponse('Validation failed', 'VALIDATION_ERROR', error.details.map(d => d.message))
+            return res.status(400).json(
+                createErrorResponse(
+                    "Validation failed",
+                    "VALIDATION_ERROR",
+                    error.details.map((d) => d.message)
+                )
             );
         }
 
         const {
-            username, projectId, name, version, current_step, overall_status,
-            overall_progress, step_status, last_activity, task
+            projectId,
+            name,
+            version,
+            current_step,
+            overall_status,
+            overall_progress,
+            step_status,
+            last_activity,
+            task,
+            userId,
         } = value;
-        
-      
+        console.log('val in sync', value)
 
         session.startTransaction();
+
+        // 2️⃣ Resolve project
         const normalizedModel = normalizeModel(task);
         let project = await Project.findById(projectId).session(session);
-        // console.log('project by id', project)
+
         if (!project) {
-            console.log('project by id not found, searching by details')
             project = await Project.findOne({
-                userId, name, model: normalizedModel, versionNumber: version
+                userId,
+                name,
+                model: normalizedModel,
+                versionNumber: version,
             }).session(session);
         }
 
-
         if (!project) {
             await session.abortTransaction();
-            console.log('project not found')
-            return res.status(RESPONSE_STATUS.NOT_FOUND).json(
-                createErrorResponse('Project not found for syncing. Sync aborted.', 'PROJECT_NOT_FOUND')
-            );
-        }
-
-        // Conflict detection
-        if (project.stepData?.version_hash) {
-            const currentHash = require('crypto')
-                .createHash('md5')
-                .update(JSON.stringify(project.stepData.step_status || {}))
-                .digest('hex');
-            const incomingHash = require('crypto')
-                .createHash('md5')
-                .update(JSON.stringify(step_status))
-                .digest('hex');
-            if (currentHash !== project.stepData.version_hash &&
-                currentHash !== incomingHash) {
-                await session.abortTransaction();
-                return res.status(RESPONSE_STATUS.CONFLICT || 409).json(
-                    createErrorResponse('Conflict detected - project was modified elsewhere', 'SYNC_CONFLICT')
-                );
-            }
-        }
-
-        switch (overall_status) {
-            case 'completed':
-                project.projectStatus = 'CLOSE';
-                project.approvedStatus = 'ACCEPT';
-                break;
-            case 'failed':
-                project.approvedStatus = 'REJECT';
-                project.projectStatus = 'OPEN';
-                break;
-            default:
-                project.projectStatus = 'OPEN';
-                project.approvedStatus = 'PENDING';
-        }
-
-        project.stepData = {
-            current_step,
-            overall_progress,
-            step_status,
-            last_sync: new Date(last_activity),
-            sync_source: 'python_service',
-            task: task
-        };
-
-        await project.save({ session });
-        await session.commitTransaction();
-
-        const responseData = {
-            id: project._id,
-            project_number: project.project_number,
-            name: project.name,
-            version: project.versionNumber,
-            status: project.projectStatus,
-            approvedStatus: project.approvedStatus,
-            current_step: project.stepData.current_step,
-            overall_progress: project.stepData.overall_progress,
-            last_sync: project.stepData.last_sync
-        };
-
-        res.status(RESPONSE_STATUS.SUCCESS).json(
-            createSuccessResponse(responseData, 'Project synced successfully')
-        );
-    } catch (error) {
-        if (session.inTransaction()) {
-            await session.abortTransaction();
-        }
-        if (error.name === 'ValidationError') {
-            return res.status(RESPONSE_STATUS.BAD_REQUEST).json(
-                createErrorResponse('Database validation failed', 'DB_VALIDATION_ERROR',
-                    Object.values(error.errors).map(e => e.message)
+            return res.status(404).json(
+                createErrorResponse(
+                    "Project not found for syncing",
+                    "PROJECT_NOT_FOUND"
                 )
             );
         }
-        res.status(RESPONSE_STATUS.SERVER_ERROR).json(
-            createErrorResponse(RESPONSE_MESSAGES.SERVER_ERROR, 'INTERNAL_ERROR')
+
+        // 3️⃣ Validate model
+        const modelSteps = MODEL_STEPS[normalizedModel];
+        if (!modelSteps) {
+            await session.abortTransaction();
+            return res.status(400).json(
+                createErrorResponse("Invalid model type", "INVALID_MODEL")
+            );
+        }
+
+        // 4️⃣ Sanitize incoming steps
+        const sanitizedSteps = normalizeIncomingSteps(
+            step_status,
+            normalizedModel
+        );
+
+        // 5️⃣ Conflict detection (CORRECT)
+        // const incomingHash = crypto
+        //     .createHash("md5")
+        //     .update(stableStringifyObject(sanitizedSteps))
+        //     .digest("hex");
+
+        // if (
+        //     project.stepData?.version_hash &&
+        //     project.stepData.version_hash !== incomingHash
+        // ) {
+        //     await session.abortTransaction();
+        //     return res.status(409).json(
+        //         createErrorResponse(
+        //             "Conflict detected - project modified elsewhere",
+        //             "SYNC_CONFLICT"
+        //         )
+        //     );
+        // }
+
+        // 6️⃣ Update project status
+        switch (overall_status) {
+            case "completed":
+                project.projectStatus = "CLOSE";
+                project.approvedStatus = "ACCEPT";
+                break;
+            case "failed":
+                project.projectStatus = "OPEN";
+                project.approvedStatus = "REJECT";
+                break;
+            default:
+                project.projectStatus = "OPEN";
+                project.approvedStatus = "PENDING";
+        }
+
+        // 7️⃣ Merge step_status safely
+        if (!project.stepData.step_status) {
+            project.stepData.step_status = new Map();
+        }
+
+        for (const step of modelSteps) {
+            if (!project.stepData.step_status.has(step)) {
+                project.stepData.step_status.set(step, {
+                    status: "pending",
+                    validation_errors: [],
+                    last_modified: new Date(),
+                });
+            }
+
+            if (sanitizedSteps[step]) {
+                project.stepData.step_status.set(step, sanitizedSteps[step]);
+            }
+        }
+
+        // 8️⃣ Update stepData metadata
+        project.stepData.current_step = current_step;
+        project.stepData.overall_progress = overall_progress;
+        project.stepData.last_sync = new Date(last_activity);
+        project.stepData.sync_source = "python_service";
+        // project.stepData.version_hash = incomingHash;
+
+        project.markModified("stepData.step_status");
+
+        // 9️⃣ Save
+        await project.save({ session });
+        await session.commitTransaction();
+
+        // 🔟 Response
+        return res.status(200).json(
+            createSuccessResponse(
+                {
+                    id: project._id,
+                    project_number: project.project_number,
+                    name: project.name,
+                    version: project.versionNumber,
+                    status: project.projectStatus,
+                    approvedStatus: project.approvedStatus,
+                    current_step: project.stepData.current_step,
+                    overall_progress: project.stepData.overall_progress,
+                    last_sync: project.stepData.last_sync,
+                },
+                "Project synced successfully"
+            )
+        );
+    } catch (err) {
+        if (session.inTransaction()) {
+            await session.abortTransaction();
+        }
+
+        console.error("syncStatus error:", err);
+
+        return res.status(500).json(
+            createErrorResponse(
+                "Internal server error",
+                "INTERNAL_ERROR"
+            )
         );
     } finally {
         await session.endSession();
     }
 };
-
+// ---------------------------------------------------
 
 exports.updateBuildStatus = async (req, res) => {
     try {
@@ -306,10 +422,10 @@ exports.updateApplicationStatus = async (req, res) => {
     }
 };
 
-exports.deleteProjectVersion = async(req,res)=> {
-try {
-    
-} catch (error) {
-    
-}
+exports.deleteProjectVersion = async (req, res) => {
+    try {
+
+    } catch (error) {
+
+    }
 }

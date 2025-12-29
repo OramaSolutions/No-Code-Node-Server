@@ -82,7 +82,9 @@ const approvedStatusChanged = async (req, res) => {
 const projectList = async (req, res) => {
     try {
         const userData = await Admin.findOne({ _id: req.user_id });
+        // console.log('user data in pro list', req.user_id)
         if (!userData) {
+            console.log('no userdata')
             return res
                 .status(RESPONSE_STATUS.NOT_FOUND)
                 .json({ message: RESPONSE_MESSAGES.NOT_FOUND });
@@ -90,6 +92,7 @@ const projectList = async (req, res) => {
         let search = {
             status: { $in: ["ACTIVE", "INACTIVE"] }
         }
+        // console.log('1', search)
         // if (req.query.status) {
         //     search.status = req.query.status
         // }
@@ -135,6 +138,7 @@ const projectList = async (req, res) => {
         }
         if (req.query.userId) {
             search.userId = new mongoose.Types.ObjectId(req.query.userId)
+            // console.log('2', search)
         }
         const { startDate, endDate, timeframe } = req.query;
 
@@ -172,6 +176,7 @@ const projectList = async (req, res) => {
                 }
             }
         ])
+        // console.log('res in pro list', result)
         return res
             .status(RESPONSE_STATUS.SUCCESS)
             .json({ code: RESPONSE_STATUS.SUCCESS, message: RESPONSE_MESSAGES.SUCCESS, result });
@@ -182,36 +187,143 @@ const projectList = async (req, res) => {
             .json({ message: RESPONSE_MESSAGES.SERVER_ERROR });
     }
 }
+
+// const addRemark = async (req, res) => {
+//     try {
+//         await body('projectId').not().isEmpty().run(req);
+//         const errors = validationResult(req).formatWith(errorFormatter);
+//         const errs = errors.array();
+//         if (!errors.isEmpty()) {
+//             return res.status(RESPONSE_STATUS.NOT_FOUND).send({ code: RESPONSE_STATUS.NOT_FOUND, message: "Please check your request", errs });
+//         }
+//         const user = await Admin.findOne({ _id: req.user_id })
+//         if (!user) {
+//             return res.status(RESPONSE_STATUS.NOT_FOUND).send({ code: RESPONSE_STATUS.NOT_FOUND, message: RESPONSE_MESSAGES.NOT_FOUND });
+//         }
+
+//         const addRemr = {
+//             projectId: req.body.projectId,
+//             notes: req.body.notes,
+//             userId: req.user_id
+//         }
+//         const addData = await Remark.create(addRemr);
+//         return res.status(RESPONSE_STATUS.SUCCESS).send({ code: RESPONSE_STATUS.SUCCESS, message: "Added Successfully", addData });
+
+//     } catch (error) {
+//         console.log('err', error)
+//         return res
+//             .status(RESPONSE_STATUS.SERVER_ERROR)
+//             .json({ message: RESPONSE_MESSAGES.SERVER_ERROR });
+//     }
+// }
+
 const addRemark = async (req, res) => {
     try {
-        await body('projectId').not().isEmpty().run(req);
-        const errors = validationResult(req).formatWith(errorFormatter);
-        const errs = errors.array();
+        await body('projectId').notEmpty().run(req);
+
+        const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            return res.status(RESPONSE_STATUS.NOT_FOUND).send({ code: RESPONSE_STATUS.NOT_FOUND, message: "Please check your request", errs });
+            return res.status(RESPONSE_STATUS.NOT_FOUND).json({
+                code: RESPONSE_STATUS.NOT_FOUND,
+                message: "Please check your request",
+                errors: errors.array(),
+            });
         }
-        const user = await Admin.findOne({ _id: req.user_id })
-        if (!user) {
-            return res.status(RESPONSE_STATUS.NOT_FOUND).send({ code: RESPONSE_STATUS.NOT_FOUND, message: RESPONSE_MESSAGES.NOT_FOUND });
+
+        const admin = await Admin.findById(req.user_id);
+        if (!admin) {
+            return res.status(RESPONSE_STATUS.NOT_FOUND).json({
+                code: RESPONSE_STATUS.NOT_FOUND,
+                message: RESPONSE_MESSAGES.NOT_FOUND,
+            });
         }
+
+        const {
+            projectId,
+            notes,
+            observation,
+            scopeOfImprovement,
+            numOfTries,
+            hardwareSetting,
+            visible,
+            date,
+            userId
+        } = req.body;
 
         const addRemr = {
-            projectId: req.body.projectId,
-            notes: req.body.notes,
-            userId: req.user_id
-        }
+            projectId,
+            notes,
+            observation,
+            scopeOfImprovement,
+            numOfTries,
+            hardwareSetting,
+            visible,
+            userId,
+            addedBy: req.user_id,
+            date: date || new Date(),
+            status: "ACTIVE",
+        };
+
         const addData = await Remark.create(addRemr);
-        return res.status(RESPONSE_STATUS.SUCCESS).send({ code: RESPONSE_STATUS.SUCCESS, message: "Added Successfully", addData });
+
+        return res.status(RESPONSE_STATUS.SUCCESS).json({
+            code: RESPONSE_STATUS.SUCCESS,
+            message: "Added Successfully",
+            addData,
+        });
 
     } catch (error) {
-        return res
-            .status(RESPONSE_STATUS.SERVER_ERROR)
-            .json({ message: RESPONSE_MESSAGES.SERVER_ERROR });
+        console.error("addRemark error:", error);
+        return res.status(RESPONSE_STATUS.SERVER_ERROR).json({
+            message: RESPONSE_MESSAGES.SERVER_ERROR,
+        });
     }
-}
+};
+
+const getProjectRemarks = async (req, res) => {
+    try {
+        const { projectId } = req.query;;
+
+        if (!projectId) {
+            return res.status(400).json({
+                code: 400,
+                message: "projectId is required",
+            });
+        }
+
+        // Optional: role-based visibility
+        // If req.user_role !== 'ADMIN', show only visible remarks
+        const filter = {
+            projectId,
+            status: "ACTIVE",
+            visible: true,
+        };
+
+     
+        const remarks = await Remark.find(filter)
+            .sort({ createdAt: -1 })
+            .lean();
+
+        return res.status(200).json({
+            code: 200,
+            message: "Remarks retrieved successfully",
+            remarks,
+        });
+
+    } catch (error) {
+        console.error("getProjectRemarks error:", error);
+        return res.status(500).json({
+            code: 500,
+            message: "Server error",
+        });
+    }
+};
+
+
 module.exports = {
     updateStatusCloseOpen,
     approvedStatusChanged,
     projectList,
     addRemark,
+    getProjectRemarks
 }

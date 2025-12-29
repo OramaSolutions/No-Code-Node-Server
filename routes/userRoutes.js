@@ -7,6 +7,7 @@ const multer = require("multer");
 const multerS3 = require('multer-s3');
 const aws = require("aws-sdk");
 const projectController = require("../controller/user/projectServices");
+const getAdminRemarkController = require("../controller/admin/projectManagement")
 const { refresh } = require("../controller/user/refreshController");
 
 aws.config.update({
@@ -34,7 +35,7 @@ router.put("/setPassword", userController.setPassword);
 router.post("/userLogin", userController.userLogin);
 // add csrfProtection when we are on the same origin oramasolutions.in
 // router.post('/refresh', csrfProtection, refresh);
-router.post('/refresh',refresh);
+router.post('/refresh', refresh);
 
 
 router.post("/sentEmail", userController.forgetEmail);
@@ -51,6 +52,7 @@ router.post("/changePassword", userController.changePassword);
 router.post("/checkProject", projectController.projectCheck);
 router.post("/createProject", projectController.addProject);
 router.post("/addRemark", projectController.addRemark);
+router.get("/getRemark", getAdminRemarkController.getProjectRemarks)
 router.post("/getProjectForOpen", projectController.getProjectForOpen);
 router.get("/myLatestProjectList", projectController.myLatestProjectList);
 router.get("/myProjectList", projectController.myProjectList);

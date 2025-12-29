@@ -177,12 +177,9 @@ const userLogin = async (req, res) => {
         if (!password_verify) {
             return res.status(RESPONSE_STATUS.UNAUTHORIZED).send({ code: RESPONSE_STATUS.UNAUTHORIZED, message: RESPONSE_MESSAGES.INVALID_CRED });
         }
-     
-
 
         const accessToken = createAccessToken(activeUser._id);
         const refreshToken = createRefreshToken(activeUser._id, activeUser.tokenVersion);
-
 
         res.cookie("access_token", accessToken, {
             httpOnly: true,
@@ -204,7 +201,7 @@ const userLogin = async (req, res) => {
         res.cookie("csrf_token", crypto.randomUUID(), {
             httpOnly: false,
             sameSite: "None",
-            secure:true,
+            secure: true,
         });
 
         return res.status(RESPONSE_STATUS.SUCCESS).send({ code: RESPONSE_STATUS.SUCCESS, message: RESPONSE_MESSAGES.LOGIN_SUCCESS, activeUser });

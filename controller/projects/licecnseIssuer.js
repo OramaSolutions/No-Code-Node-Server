@@ -46,10 +46,10 @@ async function findProjectByIdOrAppId(projectId, app_id) {
 exports.issueLicense = async (req, res) => {
     try {
         const { projectId, app_id, machine_fingerprint } = req.body;
-         if (!projectId && !app_id) {
+        if (!projectId && !app_id) {
             return res.status(400).json({ error: "Missing projectId and app_id" });
         }
-        if ( !machine_fingerprint) {
+        if (!machine_fingerprint) {
             return res.status(400).json({ error: "Missing machine_fingerprint" });
         }
 
@@ -105,6 +105,7 @@ exports.issueLicense = async (req, res) => {
         };
 
         await project.save();
+        console.log('project.applicationStatus', project.applicationStatus)
 
         return res.json({
             license_json: licenseJson,

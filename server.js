@@ -31,20 +31,10 @@ app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 app.use(morgan('combined'))
 app.set('trust proxy', false); //false for http true for https
 
-//mongoose.set('useNewUrlParser', true);
-// mongoose.set('useFindAndModify', false);
-// mongoose.set('useCreateIndex', true);
-// mongoose.set('useUnifiedTopology', true);
 
-// const cors = require('cors');
-
-// app.use(cors({
-//   origin: true,           // Reflect request origin (allows all)
-//   credentials: true       // Allow cookies/auth headers
-// }));
 
 app.use(cors({
-  origin: [process.env.FRONTEND_URL, process.env.FRONTEND_TEMP_URL, process.env.ADMIN_URL],
+  origin: [process.env.FRONTEND_URL, process.env.FRONTEND_TEMP_URL, process.env.ADMIN_URL, process.env.LABELER_URL],
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization", "x-csrf-token"],

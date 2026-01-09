@@ -1,15 +1,13 @@
 const mongoose = require("mongoose");
 const { MongoClient } = require('mongodb');
 
-// const DBURI = "mongodb://127.0.0.1:27017/orama"
-const DBURI = "mongodb+srv://development:4aVXy9SwbeXg9eWy@no-code.fyayrmb.mongodb.net/?retryWrites=true&w=majority&appName=no-code"
-// 4aVXy9SwbeXg9eWy
-// mobulusdb-  mongodb://remoteUser:userRemote%232k24%2412345@43.204.39.194:27017/orama?authSource=admin&directConnection=true
-// mongodb+srv://development:4aVXy9SwbeXg9eWy@no-code.fyayrmb.mongodb.net/?retryWrites=true&w=majority&appName=no-code
+const DBURI = process.env.DB_URI
+
 mongoose
     .connect(DBURI, {
         useNewUrlParser: true,
         useUnifiedTopology: true,
+        autoIndex: process.env.NODE_ENV === 'development', // enable in dev
         // useFindAndModify: false,
         // useCreateIndex: true,
         // poolSize: 10,

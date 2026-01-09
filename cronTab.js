@@ -1,5 +1,19 @@
 const cron = require('node-cron');
-var schedule = require('node-schedule');
+
+const notificationController = require('./controller/admin/notificationManagement');
+
+// run at 3am every day
+cron.schedule("0 3 * * *", async () => {
+    console.log("Running notification cleanup job");
+    await notificationController.softDeleteOldReadNotifications();
+});
+
+// Test deletion of old notifications every min
+// cron.schedule("* * * * *", async () => {
+//     console.log("TEST CRON RUN");
+//     await notificationController.softDeleteOldReadNotifications();
+// });
+
 
 //const { findCase } = require("./controller/admin/caseManagement.js");
 // const { checkForActiveDriver } = require("./controller/driver/driverController.js");

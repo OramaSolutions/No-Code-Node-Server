@@ -67,11 +67,12 @@ router.post("/addRemark", projectController.addRemark);
 router.post("/getRemark", projectController.getProjectRemarks)
 
 //=======================Notification==============
-router.post("/addNotification", notificationController.addNotification);
-router.post("/editNotification", notificationController.editNotification);
-router.post("/resendNotification", notificationController.resendNotification);
-router.get("/notificationList", notificationController.notificationList);
-router.delete("/deleteNotification", notificationController.statusChanged);
+router.post("/notifications", notificationController.addNotification);
+router.get("/notifications", notificationController.adminNotificationList);
+// router.post("/editNotification", notificationController.editNotification);
+// router.post("/resendNotification", notificationController.resendNotification);
+// router.get("/notificationList", notificationController.notificationList);
+// router.delete("/deleteNotification", notificationController.statusChanged);
 
 //=======================Static and social==============
 router.get("/getStaticContent", staticController.getStaticContent);

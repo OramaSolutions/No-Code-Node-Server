@@ -2,7 +2,7 @@ const { RESPONSE_MESSAGES, RESPONSE_STATUS, USER_TYPES } = require('../../consta
 const commonFunctions = require("../../commonFunctions")
 
 const Admin = require('../../models/adminModel');
-
+const sanitizeHtml = require("sanitize-html");
 const mongoose = require("mongoose");
 const Project = require('../../models/projectModel');
 const Remark = require('../../models/projectRemarkModel');
@@ -29,6 +29,25 @@ const errorFormatter = ({
     return `${location}[${param}]: ${msg}`;
 };
 
+exports.sanitizeRichText = (html) => {
+    return sanitizeHtml(html, {
+        allowedTags: [
+            "p", "b", "i", "u", "strong", "em",
+            "ul", "ol", "li",
+            "a", "br"
+        ],
+        allowedAttributes: {
+            a: ["href", "target", "rel"],
+        },
+        allowedSchemes: ["http", "https", "mailto"],
+        transformTags: {
+            a: sanitizeHtml.simpleTransform("a", {
+                target: "_blank",
+                rel: "noopener noreferrer",
+            }),
+        },
+    });
+};
 
 const updateStatusCloseOpen = async (req, res) => {
     try {
@@ -153,29 +172,42 @@ const projectList = async (req, res) => {
                     as: "userData"
                 }
             },
+            { $unwind: "$userData" },
+
+            { $match: search },
+
             {
-                $unwind: {
-                    path: "$userData",
-                    preserveNullAndEmptyArrays: true
+                $group: {
+                    _id: {
+                        name: "$name",
+                        model: "$model",
+                        userId: "$userId"
+                    },
+                    projectName: { $first: "$name" },
+                    model: { $first: "$model" },
+                    userData: { $first: "$userData" },
+                    createdAt: { $min: "$createdAt" },
+                    updatedAt: { $max: "$updatedAt" },
+                    versions: {
+                        $push: {
+                            _id: "$_id",
+                            versionNumber: "$versionNumber",
+                            fullItem: "$$ROOT"
+                        }
+                    }
                 }
             },
-            {
-                $match: search,
-            },
-            {
-                $sort: sort
-            },
+
+            { $sort: { updatedAt: -1 } },
+
             {
                 $facet: {
-                    paginationData: [{ $skip: +skip }, { $limit: +limit }],
-                    totalCount: [
-                        {
-                            $count: 'count'
-                        }
-                    ]
+                    paginationData: [{ $skip: skip }, { $limit: limit }],
+                    totalCount: [{ $count: "count" }]
                 }
             }
-        ])
+        ]);
+
         // console.log('res in pro list', result)
         return res
             .status(RESPONSE_STATUS.SUCCESS)
@@ -250,9 +282,11 @@ const addRemark = async (req, res) => {
             userId
         } = req.body;
 
+        const cleanNotes = sanitizeRichText(notes);
+
         const addRemr = {
             projectId,
-            notes,
+            notes: cleanNotes,
             observation,
             scopeOfImprovement,
             numOfTries,
@@ -299,7 +333,7 @@ const getProjectRemarks = async (req, res) => {
             visible: true,
         };
 
-     
+
         const remarks = await Remark.find(filter)
             .sort({ createdAt: -1 })
             .lean();

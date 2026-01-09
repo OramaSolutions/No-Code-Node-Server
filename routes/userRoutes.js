@@ -8,6 +8,7 @@ const multerS3 = require('multer-s3');
 const aws = require("aws-sdk");
 const projectController = require("../controller/user/projectServices");
 const getAdminRemarkController = require("../controller/admin/projectManagement")
+const userNotificationController = require("../controller/user/notificationController")
 const { refresh } = require("../controller/user/refreshController");
 
 aws.config.update({
@@ -59,5 +60,25 @@ router.get("/myProjectList", projectController.myProjectList);
 router.get("/versionDropDown", projectController.versionDropDown);
 // router.get("/notificationList", projectController.notificationList);
 router.post("/uploadDocumnet", upload.single("fileName"), userController.uploadDocumnet);
+
+
+// Get notifications for logged-in user
+router.get(
+    "/notifications",
+    userNotificationController.getUserNotifications
+);
+
+// Mark single notification as read
+router.patch(
+    "/notifications/:id/read",
+    userNotificationController.markAsRead
+);
+
+// Get unread notification count
+router.get(
+    "/notifications/unread-count",
+    userNotificationController.unreadCount
+);
+
 
 module.exports = router;

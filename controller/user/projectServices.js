@@ -27,117 +27,6 @@ const errorFormatter = ({
     return `${location}[${param}]: ${msg}`;
 };
 
-// const projectCheck = async (req, res) => {
-//     try {
-//         await body('name').not().isEmpty().run(req);
-//         const errors = validationResult(req).formatWith(errorFormatter);
-//         const errs = errors.array();
-//         if (!errors.isEmpty()) {
-//             return res.status(RESPONSE_STATUS.NOT_FOUND).send({ code: RESPONSE_STATUS.NOT_FOUND, message: "Please check your request", errs });
-//         }
-//         const askedAdmin = await User.findOne({ _id: req.user_id })
-//         if (!askedAdmin) {
-//             return res.status(RESPONSE_STATUS.NOT_FOUND).send({ code: RESPONSE_STATUS.NOT_FOUND, message: RESPONSE_MESSAGES.NOT_FOUND });
-//         }
-//         const { name, model, versionNumber } = req.body
-//         const user = await Projects.findOne({ name: name })
-//         if (user) {
-//             if (user.userId == req.user_id) {
-//                 if (user.name == name && user.model == model) {
-//                     return res.status(RESPONSE_STATUS.CONFLICT).send({ code: RESPONSE_STATUS.CONFLICT, message: "This project is already exist" });     
-//                 }
-//                 else if (user.name == name && user.model != model) {
-//                     return res.status(RESPONSE_STATUS.FORBIDDEN).send({ code: RESPONSE_STATUS.FORBIDDEN, message: "You have already created a project with this name under a different model. Please choose a different name to proceed" });
-//                 }
-//             }
-//             else {
-//                 return res.status(RESPONSE_STATUS.CONFLICT).send({
-//                 code: RESPONSE_STATUS.CONFLICT, message: "Another user has created a project with this name. Please choose a different name"
-//                 });
-//             }   
-//         }
-//         else {
-//             return res
-//                 .status(RESPONSE_STATUS.SUCCESS)
-//                 .json({ code: RESPONSE_STATUS.SUCCESS, message: "This is new project" })
-//         }
-
-//     } catch (error) {
-//         console.log(error)
-//         return res
-//             .status(RESPONSE_STATUS.SERVER_ERROR)
-//             .json({ message: RESPONSE_MESSAGES.SERVER_ERROR });
-//     }
-// }
-
-// const addProject = async (req, res) => {
-//     try {
-//         await body('name').not().isEmpty().run(req);
-//         const errors = validationResult(req).formatWith(errorFormatter);
-//         const errs = errors.array();
-//         if (!errors.isEmpty()) {
-//             return res.status(RESPONSE_STATUS.NOT_FOUND).send({ code: RESPONSE_STATUS.NOT_FOUND, message: "Please check your request", errs });
-//         }
-//         const askedAdmin = await User.findOne({ _id: req.user_id })
-//         if (!askedAdmin) {
-//             return res.status(RESPONSE_STATUS.NOT_FOUND).send({ code: RESPONSE_STATUS.NOT_FOUND, message: RESPONSE_MESSAGES.NOT_FOUND });
-//         }
-//         const { name, model, versionNumber } = req.body
-
-
-//         class IdGenerator {
-//             constructor(prefix = '', start = 0) {
-//                 this.prefix = prefix;
-//                 this.currentId = start;
-//             }
-//             generateId() {
-//                 this.currentId++;
-//                 return `${this.prefix}${this.currentId}`;
-//             }
-
-//         }
-//         const askedProject = await Projects.findOne({
-//             userId: req.user_id, name: name,
-//             model: model,
-//             versionNumber: versionNumber,
-//         })
-//         if (askedProject) {
-//             return res.status(RESPONSE_STATUS.CONFLICT).send({
-//                 code: RESPONSE_STATUS.CONFLICT, message: "This project is already exist with same version"
-//             });
-//         }
-//         let prevId;
-//         const findUser = await Projects.find({ status: { $in: ["ACTIVE", "INACTIVE"] } }).sort({ createdAt: -1 }).limit(1);
-//         if (findUser.length > 0) {
-//             const findValue = findUser[0].project_number
-//             prevId = findValue.substr(4, findValue.length);
-//         }
-//         else {
-//             prevId = "100"
-//         }
-//         const userIdGenerator = new IdGenerator('PROC', prevId);
-//         const genId = userIdGenerator.generateId(); // User1001
-//         const catObject = {
-//             name: name,
-//             model: model,
-//             versionNumber: versionNumber,
-//             userId: req.user_id,
-//             project_number: genId
-
-//         }
-//         const addBanner = await Projects.create(catObject);
-
-//         return res
-//             .status(RESPONSE_STATUS.SUCCESS)
-//             .json({ code: RESPONSE_STATUS.SUCCESS, message: "Project added successfully", addBanner })
-
-//     } catch (error) {
-//         console.log(error)
-//         return res
-//             .status(RESPONSE_STATUS.SERVER_ERROR)
-//             .json({ message: RESPONSE_MESSAGES.SERVER_ERROR });
-//     }
-// }
 
 function normalizeModel(model) {
     return model.toLowerCase().replace(/[\s-_]/g, '');
@@ -419,7 +308,6 @@ const addProject = async (req, res) => {
         });
     }
 }
-
 
 const addRemark = async (req, res) => {
     try {

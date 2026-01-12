@@ -5,14 +5,14 @@ const { verifyToken } = require("../auth/verifyToken");
 const internalAuth = require("../auth/internalAuth");
 const jwt = require('jsonwebtoken');
 // const { validateSyncApiKey } = require("./yourMiddlewareFile"); 
-const projectController = require('../controller/projects/projectsController'); 
+const projectController = require('../controller/projects/projectsController');
 const applicationsController = require('../controller/projects/applicationsController');
 const licenseController = require('../controller/projects/licecnseIssuer');
 const D_S_K = 'mimimimi'
 
 function generateSignedUrl({ filename, username, task, project, version, userId, projectId }, expiresInSeconds = 300) {
   const token = jwt.sign(
-    { filename, username, task, project, version, userId, projectId},
+    { filename, username, task, project, version, userId, projectId },
     D_S_K,
     { expiresIn: expiresInSeconds }
   );
@@ -31,7 +31,7 @@ const syncRateLimit = rateLimit({
   legacyHeaders: false,
 });
 
-router.post('/update-application-status',internalAuth, projectController.updateApplicationStatus)
+router.post('/update-application-status', internalAuth, projectController.updateApplicationStatus)
 
 router.put('/sync-status',
   syncRateLimit,
@@ -46,7 +46,7 @@ router.post('/update-build-status',
   projectController.updateBuildStatus
 );
 
-router.get('/get-download-url/:filename', (req, res) => {
+router.get('/get-download-url/:filename', verifyToken, (req, res) => {
   const { filename } = req.params;
   const userId = req.user_id;
   const { username, task, project, version, projectId } = req.query; // Optional, if needed to validate outside token

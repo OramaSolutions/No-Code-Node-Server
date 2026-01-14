@@ -32,41 +32,102 @@ function normalizeModel(model) {
     return model.toLowerCase().replace(/[\s-_]/g, '');
 }
 
+// const projectCheck = async (req, res) => {
+//     try {
+//         await body('name').not().isEmpty().run(req);
+//         const errors = validationResult(req).formatWith(errorFormatter);
+//         const errs = errors.array();
+//         if (!errors.isEmpty()) {
+//             return res.status(RESPONSE_STATUS.NOT_FOUND).send({ code: RESPONSE_STATUS.NOT_FOUND, message: "Please check your request", errs });
+//         }
+//         const askedAdmin = await User.findOne({ _id: req.user_id });
+//         if (!askedAdmin) {
+//             return res.status(RESPONSE_STATUS.NOT_FOUND).send({ code: RESPONSE_STATUS.NOT_FOUND, message: RESPONSE_MESSAGES.NOT_FOUND });
+//         }
+//         const { name, model } = req.body;
+//         const normalizedModel = normalizeModel(model);
+//         const project = await Projects.findOne({ userId: req.user_id, name, model: normalizedModel });
+//         if (project) {
+//             // Project exists for this user, same name, same model: suggest new version
+//             return res.status(402).send({
+//                 code: 402,
+//                 message: "You have already created a project with this name under the same model. Do you want to create a new version"
+//             });
+//         }
+//         // Otherwise: new project allowed
+//         return res.status(RESPONSE_STATUS.SUCCESS).json({
+//             code: RESPONSE_STATUS.SUCCESS,
+//             message: "This is new project"
+//         });
+//     } catch (error) {
+//         console.log(error)
+//         return res.status(RESPONSE_STATUS.SERVER_ERROR).json({
+//             message: RESPONSE_MESSAGES.SERVER_ERROR
+//         });
+//     }
+// }
+
 const projectCheck = async (req, res) => {
     try {
         await body('name').not().isEmpty().run(req);
         const errors = validationResult(req).formatWith(errorFormatter);
         const errs = errors.array();
         if (!errors.isEmpty()) {
-            return res.status(RESPONSE_STATUS.NOT_FOUND).send({ code: RESPONSE_STATUS.NOT_FOUND, message: "Please check your request", errs });
+            return res.status(RESPONSE_STATUS.NOT_FOUND).send({ 
+                code: RESPONSE_STATUS.NOT_FOUND, 
+                message: "Please check your request", 
+                errs 
+            });
         }
         const askedAdmin = await User.findOne({ _id: req.user_id });
         if (!askedAdmin) {
-            return res.status(RESPONSE_STATUS.NOT_FOUND).send({ code: RESPONSE_STATUS.NOT_FOUND, message: RESPONSE_MESSAGES.NOT_FOUND });
+            return res.status(RESPONSE_STATUS.NOT_FOUND).send({ 
+                code: RESPONSE_STATUS.NOT_FOUND, 
+                message: RESPONSE_MESSAGES.NOT_FOUND 
+            });
         }
         const { name, model } = req.body;
         const normalizedModel = normalizeModel(model);
-        const project = await Projects.findOne({ userId: req.user_id, name, model: normalizedModel });
+        
+        const project = await Projects.findOne({ 
+            userId: req.user_id, 
+            name, 
+            model: normalizedModel 
+        });
+        
         if (project) {
-            // Project exists for this user, same name, same model: suggest new version
+            // Project exists: fetch all versions for this project
+            const allVersions = await Projects.find({ 
+                userId: req.user_id, 
+                name, 
+                model: normalizedModel 
+            }).select('versionNumber').sort({ createdAt: 1 });
+            
+            const versions = allVersions.map(v => v.versionNumber);
+            
             return res.status(402).send({
                 code: 402,
-                message: "You have already created a project with this name under the same model. Do you want to create a new version"
+                message: "You have already created a project with this name under the same model. Do you want to create a new version",
+                data: {
+                    name,
+                    model: normalizedModel,
+                    versions: versions  // Include existing versions
+                }
             });
         }
+        
         // Otherwise: new project allowed
         return res.status(RESPONSE_STATUS.SUCCESS).json({
             code: RESPONSE_STATUS.SUCCESS,
             message: "This is new project"
         });
     } catch (error) {
-        console.log(error)
+        console.log(error);
         return res.status(RESPONSE_STATUS.SERVER_ERROR).json({
             message: RESPONSE_MESSAGES.SERVER_ERROR
         });
     }
 }
-
 
 
 const MODEL_STEPS = {
